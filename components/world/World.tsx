@@ -397,9 +397,9 @@ function CameraControls({
     // The chrome above and below the island is a fixed ~160px on a tall
     // screen, but it folds up on a short one — reserving the full 160 there
     // leaves the island a pinhole and its labels pile on top of each other.
-    const reserved = Math.min(160, size.height * 0.24);
+    const reserved = Math.min(160, size.height * 0.2);
     camera.zoom = Math.max(
-      22,
+      27,
       Math.min(size.width / 18, (size.height - reserved) / 14, 75),
     );
     camera.updateProjectionMatrix();

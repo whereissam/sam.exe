@@ -2807,18 +2807,21 @@ button {
     bottom: calc(2px + env(safe-area-inset-bottom));
   }
 }
-/* The 3D labels keep their pixel size while the island shrinks, so they crowd
-   together first. Trim them before they cover the thing they point at. */
-@media (max-height: 640px) {
+/* The 3D labels keep their pixel size while the island shrinks under them, so
+   neighbouring districts collide long before anything else does — at 1429x488
+   "Elsewhere Station" lands squarely on top of "AI Observatory". The gap
+   between those two is ~4 world units, which is ~110px of screen at the zoom a
+   short viewport allows, so the pills have to fit inside that: drop the number
+   badge and the arrow and keep the name. The numbers still read in the nav. */
+@media (max-height: 700px) {
   .world-label {
     font-size: 10px;
-    padding: 5px 8px;
-    gap: 6px;
+    min-height: 28px;
+    gap: 0;
+    padding: 4px 11px;
   }
+  .world-label > span,
   .world-label > b {
-    font-size: 11px;
-  }
-  .world-label > span {
-    font-size: 8px;
+    display: none;
   }
 }
