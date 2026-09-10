@@ -1,0 +1,166 @@
+{
+  "photos": [
+    {
+      "id": "berlin-gate",
+      "file": "berlin-gate.jpg",
+      "title": "A place to pause",
+      "alt": "Visitors and cyclists around Brandenburg Gate in daylight.",
+      "location": "Berlin",
+      "series": "Berlin",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "demo": true,
+      "credit": "Eugenia Pan’kiv / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/AG1beo31e1M"
+    },
+    {
+      "id": "berlin-square",
+      "file": "berlin-square.jpg",
+      "title": "Life between the columns",
+      "alt": "People gathering in the square beside Brandenburg Gate.",
+      "location": "Berlin",
+      "series": "Berlin",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "demo": true,
+      "credit": "Norbert Braun / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/Q9EDpUnUmbo"
+    },
+    {
+      "id": "taipei-skyline",
+      "file": "taipei-skyline.jpg",
+      "title": "A city against the hills",
+      "alt": "Taipei skyline with Taipei 101 and hills in the distance.",
+      "location": "Taipei",
+      "series": "Taipei",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "demo": true,
+      "credit": "Christie Chau / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/vVa72BXd_ME"
+    },
+    {
+      "id": "taipei-overcast",
+      "file": "taipei-overcast.jpg",
+      "title": "Under a softer sky",
+      "alt": "Taipei 101 and the city beneath an overcast sky.",
+      "location": "Taipei",
+      "series": "Taipei",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "demo": true,
+      "credit": "Someus Christopher / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/yMKRCniwoNk"
+    },
+    {
+      "id": "new-york-waterfront",
+      "file": "new-york-waterfront.jpg",
+      "title": "Across the water",
+      "alt": "Lower Manhattan skyline across a river on a clear day.",
+      "location": "New York",
+      "series": "New York",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "demo": true,
+      "credit": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/zmF9dinILOk"
+    },
+    {
+      "id": "new-york-skyline",
+      "file": "new-york-skyline.jpg",
+      "title": "Lines into the sky",
+      "alt": "New York buildings and waterfront beneath a blue sky.",
+      "location": "New York",
+      "series": "New York",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "demo": true,
+      "credit": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/-EqQWELKabM"
+    },
+    {
+      "id": "tokyo-lights",
+      "file": "tokyo-lights.jpg",
+      "title": "After the lights come on",
+      "alt": "A narrow Tokyo street illuminated by colorful signs at night.",
+      "location": "Tokyo",
+      "series": "Tokyo",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "demo": true,
+      "credit": "Tsuyoshi Kozu / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/v5oeijdPXPI"
+    },
+    {
+      "id": "tokyo-evening",
+      "file": "tokyo-evening.jpg",
+      "title": "The long way home",
+      "alt": "Pedestrians and bicycles on a Tokyo street beneath illuminated signs.",
+      "location": "Tokyo",
+      "series": "Tokyo",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "demo": true,
+      "credit": "mos design / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/2uGqH_E9ne8"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "berlin",
+      "city": "Berlin",
+      "country": "Germany",
+      "title": "Between concrete and quiet",
+      "paragraphs": [
+        "A sample chapter built around open squares, stone facades, and the small movements of a city in daylight. Two views of the same landmark make room for a wider scene and the people within it.",
+        "This is placeholder editorial copy for the travel journal. It will be replaced with personal notes and original photographs."
+      ],
+      "period": "Sample chapter",
+      "demo": true,
+      "photoIds": [
+        "berlin-gate",
+        "berlin-square"
+      ]
+    },
+    {
+      "id": "taipei",
+      "city": "Taipei",
+      "country": "Taiwan",
+      "title": "A city against the hills",
+      "paragraphs": [
+        "A sample photo walk in two moods: the city opening beneath a clear sky, then settling under a softer cover of clouds. Buildings, foliage, and distant ridgelines share the frame.",
+        "This chapter demonstrates how a short travel note and a paired photographic series will sit together. It is not a record of a specific trip."
+      ],
+      "period": "Sample chapter",
+      "demo": true,
+      "photoIds": [
+        "taipei-skyline",
+        "taipei-overcast"
+      ]
+    },
+    {
+      "id": "new-york",
+      "city": "New York",
+      "country": "United States",
+      "title": "Across the water",
+      "paragraphs": [
+        "A sample chapter about distance and scale. From the waterfront, a dense skyline becomes a sequence of shapes, with open water leaving a little breathing room in the foreground.",
+        "These reference images are here to preview the layout. Actual travel dates, routes, and memories can be added later."
+      ],
+      "period": "Sample chapter",
+      "demo": true,
+      "photoIds": [
+        "new-york-waterfront",
+        "new-york-skyline"
+      ]
+    },
+    {
+      "id": "tokyo",
+      "city": "Tokyo",
+      "country": "Japan",
+      "title": "After the lights come on",
+      "paragraphs": [
+        "A sample night-walk sequence: bright signs above narrow streets, bicycles at the edge of the frame, and people moving between pools of color.",
+        "This is demonstration text for a future personal travel story. The photographs are credited reference images, not original work by Sam."
+      ],
+      "period": "Sample chapter",
+      "demo": true,
+      "photoIds": [
+        "tokyo-lights",
+        "tokyo-evening"
+      ]
+    }
+  ]
+}

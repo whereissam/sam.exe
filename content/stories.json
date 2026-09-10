@@ -1,0 +1,190 @@
+{
+  "photos": [
+    {
+      "id": "berlin-gate",
+      "demo": true,
+      "credit": "Eugenia Pan’kiv / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/AG1beo31e1M",
+      "title": "A place to pause",
+      "alt": "Visitors and cyclists around Brandenburg Gate in daylight.",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "location": "Berlin",
+      "series": "Berlin",
+      "src": "/photography/berlin-gate-d73b5328ca70.webp",
+      "thumbnail": "/photography/berlin-gate-d73b5328ca70-thumb.webp",
+      "width": 1068,
+      "height": 1600
+    },
+    {
+      "id": "berlin-square",
+      "demo": true,
+      "credit": "Norbert Braun / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/Q9EDpUnUmbo",
+      "title": "Life between the columns",
+      "alt": "People gathering in the square beside Brandenburg Gate.",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "location": "Berlin",
+      "series": "Berlin",
+      "src": "/photography/berlin-square-8e9ff416cdf6.webp",
+      "thumbnail": "/photography/berlin-square-8e9ff416cdf6-thumb.webp",
+      "width": 1600,
+      "height": 1025
+    },
+    {
+      "id": "taipei-skyline",
+      "demo": true,
+      "credit": "Christie Chau / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/vVa72BXd_ME",
+      "title": "A city against the hills",
+      "alt": "Taipei skyline with Taipei 101 and hills in the distance.",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "location": "Taipei",
+      "series": "Taipei",
+      "src": "/photography/taipei-skyline-3ebd709f3942.webp",
+      "thumbnail": "/photography/taipei-skyline-3ebd709f3942-thumb.webp",
+      "width": 1600,
+      "height": 901
+    },
+    {
+      "id": "taipei-overcast",
+      "demo": true,
+      "credit": "Someus Christopher / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/yMKRCniwoNk",
+      "title": "Under a softer sky",
+      "alt": "Taipei 101 and the city beneath an overcast sky.",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "location": "Taipei",
+      "series": "Taipei",
+      "src": "/photography/taipei-overcast-a9bac7aeef50.webp",
+      "thumbnail": "/photography/taipei-overcast-a9bac7aeef50-thumb.webp",
+      "width": 1600,
+      "height": 1038
+    },
+    {
+      "id": "new-york-waterfront",
+      "demo": true,
+      "credit": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/zmF9dinILOk",
+      "title": "Across the water",
+      "alt": "Lower Manhattan skyline across a river on a clear day.",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "location": "New York",
+      "series": "New York",
+      "src": "/photography/new-york-waterfront-4a7b75b0d828.webp",
+      "thumbnail": "/photography/new-york-waterfront-4a7b75b0d828-thumb.webp",
+      "width": 1600,
+      "height": 1067
+    },
+    {
+      "id": "new-york-skyline",
+      "demo": true,
+      "credit": "Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/-EqQWELKabM",
+      "title": "Lines into the sky",
+      "alt": "New York buildings and waterfront beneath a blue sky.",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "location": "New York",
+      "series": "New York",
+      "src": "/photography/new-york-skyline-d58cd68c7801.webp",
+      "thumbnail": "/photography/new-york-skyline-d58cd68c7801-thumb.webp",
+      "width": 1600,
+      "height": 1060
+    },
+    {
+      "id": "tokyo-lights",
+      "demo": true,
+      "credit": "Tsuyoshi Kozu / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/v5oeijdPXPI",
+      "title": "After the lights come on",
+      "alt": "A narrow Tokyo street illuminated by colorful signs at night.",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "location": "Tokyo",
+      "series": "Tokyo",
+      "src": "/photography/tokyo-lights-e5328d9bc26d.webp",
+      "thumbnail": "/photography/tokyo-lights-e5328d9bc26d-thumb.webp",
+      "width": 1281,
+      "height": 1600
+    },
+    {
+      "id": "tokyo-evening",
+      "demo": true,
+      "credit": "mos design / Unsplash",
+      "sourceUrl": "https://unsplash.com/photos/2uGqH_E9ne8",
+      "title": "The long way home",
+      "alt": "Pedestrians and bicycles on a Tokyo street beneath illuminated signs.",
+      "caption": "Demonstration photograph selected to preview this city’s gallery.",
+      "location": "Tokyo",
+      "series": "Tokyo",
+      "src": "/photography/tokyo-evening-f392b7cc27ed.webp",
+      "thumbnail": "/photography/tokyo-evening-f392b7cc27ed-thumb.webp",
+      "width": 1600,
+      "height": 1067
+    }
+  ],
+  "journeys": [
+    {
+      "id": "berlin",
+      "demo": true,
+      "city": "Berlin",
+      "country": "Germany",
+      "period": "Sample chapter",
+      "title": "Between concrete and quiet",
+      "paragraphs": [
+        "A sample chapter built around open squares, stone facades, and the small movements of a city in daylight. Two views of the same landmark make room for a wider scene and the people within it.",
+        "This is placeholder editorial copy for the travel journal. It will be replaced with personal notes and original photographs."
+      ],
+      "photoIds": [
+        "berlin-gate",
+        "berlin-square"
+      ]
+    },
+    {
+      "id": "taipei",
+      "demo": true,
+      "city": "Taipei",
+      "country": "Taiwan",
+      "period": "Sample chapter",
+      "title": "A city against the hills",
+      "paragraphs": [
+        "A sample photo walk in two moods: the city opening beneath a clear sky, then settling under a softer cover of clouds. Buildings, foliage, and distant ridgelines share the frame.",
+        "This chapter demonstrates how a short travel note and a paired photographic series will sit together. It is not a record of a specific trip."
+      ],
+      "photoIds": [
+        "taipei-skyline",
+        "taipei-overcast"
+      ]
+    },
+    {
+      "id": "new-york",
+      "demo": true,
+      "city": "New York",
+      "country": "United States",
+      "period": "Sample chapter",
+      "title": "Across the water",
+      "paragraphs": [
+        "A sample chapter about distance and scale. From the waterfront, a dense skyline becomes a sequence of shapes, with open water leaving a little breathing room in the foreground.",
+        "These reference images are here to preview the layout. Actual travel dates, routes, and memories can be added later."
+      ],
+      "photoIds": [
+        "new-york-waterfront",
+        "new-york-skyline"
+      ]
+    },
+    {
+      "id": "tokyo",
+      "demo": true,
+      "city": "Tokyo",
+      "country": "Japan",
+      "period": "Sample chapter",
+      "title": "After the lights come on",
+      "paragraphs": [
+        "A sample night-walk sequence: bright signs above narrow streets, bicycles at the edge of the frame, and people moving between pools of color.",
+        "This is demonstration text for a future personal travel story. The photographs are credited reference images, not original work by Sam."
+      ],
+      "photoIds": [
+        "tokyo-lights",
+        "tokyo-evening"
+      ]
+    }
+  ]
+}

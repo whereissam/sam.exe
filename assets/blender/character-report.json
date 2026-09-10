@@ -1,0 +1,16 @@
+{
+  "sam": {
+    "bytes": 274608,
+    "triangles": 4334,
+    "primitives": 21,
+    "height": 2.3025000393390656,
+    "articulation": "raised arm verified"
+  },
+  "companion": {
+    "bytes": 280124,
+    "triangles": 4394,
+    "primitives": 19,
+    "height": 2.467500001192093,
+    "articulation": "raised arm verified"
+  }
+}

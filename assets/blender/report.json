@@ -1,0 +1,32 @@
+{
+  "robotics": {
+    "triangles": 288,
+    "bytes": 30744,
+    "objects": 16
+  },
+  "frontend": {
+    "triangles": 204,
+    "bytes": 24412,
+    "objects": 13
+  },
+  "blockchain": {
+    "triangles": 620,
+    "bytes": 55092,
+    "objects": 20
+  },
+  "ai": {
+    "triangles": 848,
+    "bytes": 58416,
+    "objects": 6
+  },
+  "photography": {
+    "triangles": 700,
+    "bytes": 50180,
+    "objects": 10
+  },
+  "travel": {
+    "triangles": 1208,
+    "bytes": 80624,
+    "objects": 7
+  }
+}
