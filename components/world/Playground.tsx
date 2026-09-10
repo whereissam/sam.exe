@@ -62,7 +62,9 @@ export function CollectibleSparks({
                 emissiveIntensity={1.8}
               />
             </mesh>
-            <Html position={[0, 0.95, 0]} center>
+            {/* Below the district labels' range so a spark sitting in front
+                of one never swallows the name. */}
+            <Html position={[0, 0.95, 0]} center zIndexRange={[6, 0]}>
               <button
                 disabled={paused}
                 className="spark-control"
@@ -147,7 +149,7 @@ export function Beacon({
           depthWrite={false}
         />
       </mesh>
-      <Html position={[0, 0.92, 0]} center>
+      <Html position={[0, 0.92, 0]} center zIndexRange={[6, 0]}>
         <button
           className={`beacon-control ${lit ? 'is-lit' : ''}`}
           disabled={paused}
