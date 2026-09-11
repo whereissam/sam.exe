@@ -136,7 +136,7 @@ Sources: [atlas scene](../components/stories/PhotoAtlas.tsx), [layout and routin
 
 Implemented: separate travellers, switching control, following, walking motions, Wave, Jump, and Celebrate. These use rigid-part joints animated in React Three Fiber, not embedded skeletal animation clips.
 
-Also implemented: a local-time daily routine (nap, stretch, work, wander, relax) that the travellers settle into after four still seconds, shared by the island and the photo atlas. Any activity clears the timer, so a routine pose never survives a step.
+Also implemented: a local-time daily routine (nap, stretch, work, wander, relax) that the travellers settle into after four still seconds, shared by the island and the photo atlas. Any activity clears the timer, so a routine pose never survives a step. Each routine now carries a prop — pillow, yoga mat, laptop, book, or a gull on a mooring post — so it is recognizable from the island's camera height.
 
 The controls now live on the island rather than in a corner button bar: click the other traveller to swap, click your own to open an action ring, and click the signpost for the passport. `Q`, `1`/`2`/`3`, and `P` are the keyboard equivalents.
 
@@ -145,6 +145,9 @@ The controls now live on the island rather than in a corner button bar: click th
 - [x] Replace accumulated follower trails with route replanning after movement or character switching.
 - [x] Simulate a tour around the island, repeated switches, keyboard cancellation, reset, invalid destinations, and idle settling; check both travellers for collisions and teleporting at each simulation step.
 - [x] Simulate the daily routine: prove a four-leg walking tour never lets a nap start, and that gestures, tap routes, held keys, and binocular viewing each interrupt rest on their own.
+- [x] Stop the lighting toggle forcing a nap. Choosing a night sky returned `sleep` at every hour, so a visitor who preferred the night view saw the pair asleep at midday and never met the other four routines. The clock alone now picks the routine; the toggle only sets the sky.
+- [x] Give `stretch` and `wander` props of their own. They animated joints only — a sway and a head turn on a small distant figure — which reads as standing still next to the pillow and laptop the other routines carry.
+- [ ] Look at the new mat and mooring-post props on screen and adjust their placement. They were positioned by inspection: the browser tooling cannot drive this scene, because an automated tab reports itself hidden and the world pauses.
 - [ ] Verify walking and following around every installation, at island edges, and after repeatedly switching characters.
 - [ ] Check each gesture while standing, walking, opening panels, and returning from a hidden tab.
 - [x] Lay two sleepers side by side. They previously lay down along their walking headings, which point wherever they last travelled, so one body could lie straight through the other.

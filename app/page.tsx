@@ -113,7 +113,7 @@ export default function Home() {
   const [localTime, setLocalTime] = useState<Date | null>(null);
   // Holds the visitor's remembered choice, or null to follow their local hour.
   const lighting = useRef<Lighting | null>(null);
-  const routine = routineAtHour(localTime?.getHours() ?? 12, night);
+  const routine = routineAtHour(localTime?.getHours() ?? 12);
   useEffect(() => {
     // Restore a remembered choice first, so the clock below does not overrule it.
     try {

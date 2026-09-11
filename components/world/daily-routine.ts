@@ -14,11 +14,14 @@ export const LIGHTING_KEY = 'sam-exe-lighting';
 export const readLighting = (raw: string | null): Lighting | null =>
   raw === 'night' || raw === 'day' ? raw : null;
 export const isNightHour = (hour: number) => hour < 7 || hour >= 22;
-export function routineAtHour(hour: number, night: boolean): DailyRoutine {
-  if (night) return 'sleep';
-  if (hour >= 7 && hour < 11) return 'stretch';
-  if (hour >= 11 && hour < 17) return 'work';
-  if (hour >= 17 && hour < 21) return 'wander';
+/** The routine follows the visitor's clock alone. The lighting toggle used to
+ *  force a nap, which meant choosing a night sky at noon left the pair asleep
+ *  for the rest of the visit and hid the other four routines entirely. */
+export function routineAtHour(hour: number): DailyRoutine {
+  if (isNightHour(hour)) return 'sleep';
+  if (hour < 11) return 'stretch';
+  if (hour < 17) return 'work';
+  if (hour < 21) return 'wander';
   return 'relax';
 }
 

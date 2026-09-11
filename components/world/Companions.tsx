@@ -158,6 +158,50 @@ function RoutineProps({
         )}
       </group>
     );
+  if (routine === 'stretch')
+    return (
+      <group>
+        {/* A mat is a ground footprint, so it stays readable from the island's
+         *  high camera angle where a held object would be a few pixels. */}
+        <mesh position={[0, 0.01, 0.05]} receiveShadow>
+          <boxGeometry args={[0.64, 0.04, 1.24]} />
+          <meshStandardMaterial color="#dc9a80" />
+        </mesh>
+        <mesh position={[0, 0.09, -0.52]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.08, 0.08, 0.58, 8]} />
+          <meshStandardMaterial color="#c4806a" />
+        </mesh>
+      </group>
+    );
+  if (routine === 'wander')
+    return (
+      <group position={[0.66, 0, 0.2]}>
+        {/* Something for them to be watching: the head already turns, but with
+         *  nothing beside them that reads as standing perfectly still. */}
+        <mesh position={[0, 0.31, 0]} castShadow>
+          <cylinderGeometry args={[0.07, 0.085, 0.62, 8]} />
+          <meshStandardMaterial color="#8a7a63" />
+        </mesh>
+        <group position={[0, 0.72, 0]} rotation={[0, -0.5, 0]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.15, 0.15, 0.26]} />
+            <meshStandardMaterial color="#f0e6d2" />
+          </mesh>
+          <mesh position={[0, 0.09, 0.12]}>
+            <boxGeometry args={[0.11, 0.11, 0.11]} />
+            <meshStandardMaterial color="#f0e6d2" />
+          </mesh>
+          <mesh position={[0, 0.09, 0.2]}>
+            <boxGeometry args={[0.04, 0.04, 0.07]} />
+            <meshStandardMaterial color="#e4a04b" />
+          </mesh>
+          <mesh position={[0, 0.05, -0.18]} rotation={[0.5, 0, 0]}>
+            <boxGeometry args={[0.11, 0.03, 0.18]} />
+            <meshStandardMaterial color="#c9bda4" />
+          </mesh>
+        </group>
+      </group>
+    );
   if (routine === 'work' || routine === 'relax')
     return (
       <group position={[0, 0.68, 0.3]}>

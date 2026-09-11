@@ -33,10 +33,10 @@ const settle = (rest, activity = still) => {
   return rest.resting;
 };
 
-test('daily routines change at local-time boundaries and night mode always allows a nap', () => {
+test('daily routines change at local-time boundaries', () => {
   assert.deepEqual([6, 7, 21, 22].map(isNightHour), [true, false, false, true]);
   assert.deepEqual(
-    [7, 10, 11, 16, 17, 20, 21, 23].map((h) => routineAtHour(h, false)),
+    [7, 10, 11, 16, 17, 20, 21, 21.9].map((h) => routineAtHour(Math.floor(h))),
     [
       'stretch',
       'stretch',
@@ -48,7 +48,20 @@ test('daily routines change at local-time boundaries and night mode always allow
       'relax',
     ],
   );
-  for (let h = 0; h < 24; h++) assert.equal(routineAtHour(h, true), 'sleep');
+  // Every routine has to be reachable from the clock, or the ones nobody can
+  // see may as well not exist.
+  assert.deepEqual(
+    [...new Set(Array.from({ length: 24 }, (_, h) => routineAtHour(h)))].sort(),
+    ['relax', 'sleep', 'stretch', 'wander', 'work'],
+  );
+});
+
+test('a chosen night sky does not put the pair to sleep at midday', () => {
+  // The lighting toggle is a sky choice; only the clock decides the routine.
+  for (const hour of [0, 6, 22, 23])
+    assert.equal(routineAtHour(hour), 'sleep', `hour ${hour}`);
+  for (let hour = 7; hour < 22; hour++)
+    assert.notEqual(routineAtHour(hour), 'sleep', `hour ${hour}`);
 });
 
 test('the routine pose only appears after the full delay of stillness', () => {
