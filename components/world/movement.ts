@@ -1,42 +1,37 @@
 import { districts } from './districts';
+import {
+  islandObstacles,
+  ISLAND_WALK_RADIUS,
+  onHarborLand,
+  landCoversSegment,
+} from './island-layout';
 export type Point = { x: number; z: number };
 export const SPAWN: Point = { x: 0, z: 2 };
-export const ISLAND_RADIUS = 6.2;
+export const ISLAND_RADIUS = ISLAND_WALK_RADIUS;
 export const INSTALLATION_RADIUS = 1.4;
 export function walkable(p: Point) {
   return (
     Number.isFinite(p.x) &&
     Number.isFinite(p.z) &&
-    Math.hypot(p.x, p.z) < ISLAND_RADIUS &&
-    !districts.some(
-      (d) =>
-        Math.hypot(p.x - d.position[0], p.z - d.position[2]) <
-        INSTALLATION_RADIUS,
-    )
+    onHarborLand(p) &&
+    !islandObstacles.some((o) => Math.hypot(p.x - o.x, p.z - o.z) < o.radius)
   );
 }
-// The island is convex. Check the entire segment against each circular footprint.
+// Routes must remain on an island or bridge for the entire segment.
 export function clearSegment(a: Point, b: Point) {
-  if (!walkable(a) || !walkable(b)) return false;
+  if (!walkable(a) || !walkable(b) || !landCoversSegment(a, b)) return false;
   const dx = b.x - a.x,
     dz = b.z - a.z,
     lengthSquared = dx * dx + dz * dz;
-  return districts.every((d) => {
+  return islandObstacles.every((d) => {
     const t =
       lengthSquared === 0
         ? 0
         : Math.max(
             0,
-            Math.min(
-              1,
-              ((d.position[0] - a.x) * dx + (d.position[2] - a.z) * dz) /
-                lengthSquared,
-            ),
+            Math.min(1, ((d.x - a.x) * dx + (d.z - a.z) * dz) / lengthSquared),
           );
-    return (
-      Math.hypot(a.x + t * dx - d.position[0], a.z + t * dz - d.position[2]) >=
-      INSTALLATION_RADIUS
-    );
+    return Math.hypot(a.x + t * dx - d.x, a.z + t * dz - d.z) >= d.radius;
   });
 }
 export function advance(p: Point, delta: Point): Point {

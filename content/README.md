@@ -23,6 +23,7 @@ Source schema (the strings below are instructions, not published personal conten
       "title": "Your photograph title",
       "alt": "Describe what is visible in this photograph",
       "location": "Optional location",
+      "country": "Optional country for the 3D memory atlas",
       "date": "Optional date",
       "series": "Optional series name",
       "caption": "Optional story behind the photograph"
@@ -42,7 +43,9 @@ Source schema (the strings below are instructions, not published personal conten
 }
 ```
 
-The photo viewer uses a native dialog with focus containment, Escape to close, and arrow-key navigation. It loads thumbnails in the grid and requests the larger photograph only when opened. Travel entries expand into narratives with their associated photographs. All content remains usable without entering 3D.
+The Darkroom opens a walkable 3D world map with recognizable continents. Photographs are grouped by their optional `country` field, falling back to the country of their associated journey. Unassigned photographs stay accessible in “Uncharted memories.” Walk or tap a destination to enter its photo garden, then scroll/swipe to move the traveller beneath the framed images with binoculars. Photos retain their original proportions. Notes and credits open in a small dialog over the garden.
+
+The travel-journal photo viewer uses a native dialog with focus containment, Escape to close, and arrow-key navigation. It loads thumbnails in the grid and requests the larger photograph only when opened. Travel entries expand into narratives with their associated photographs. All content remains usable without entering 3D.
 
 ## Project Arcade
 

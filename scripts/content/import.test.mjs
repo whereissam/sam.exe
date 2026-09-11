@@ -23,6 +23,7 @@ test('photo import downsizes, strips EXIF, preserves original, and resolves a jo
         file: 'original.jpg',
         title: 'Test fixture',
         alt: 'Solid test color',
+        country: 'Test country',
       },
     ],
     journeys: [
@@ -50,6 +51,7 @@ test('photo import downsizes, strips EXIF, preserves original, and resolves a jo
     await readFile(join(out, 'content/stories.json'), 'utf8'),
   );
   const image = await sharp(join(out, 'public', data.photos[0].src)).metadata();
+  assert.equal(data.photos[0].country, 'Test country');
   assert.equal(image.width, 1600);
   assert.equal(image.height, 1200);
   assert.equal(image.exif, undefined);
