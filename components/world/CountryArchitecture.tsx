@@ -213,7 +213,7 @@ export function CountryBackdrop({
         0,
         -1.5,
       ]}
-      scale={kind === 'gate' ? 0.7 : 0.9}
+      scale={kind === 'gate' ? 0.7 : 0.8}
     >
       <CountryLandmark kind={kind} />
       <Block

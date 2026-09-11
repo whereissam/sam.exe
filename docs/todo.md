@@ -2,13 +2,28 @@
 
 Updated: 2026-09-11. Unchecked items are pending; optional ideas are not launch requirements.
 
+## Completed checklist pass — 2026-09-11
+
+Browser evidence and limitations: [checklist review](../reports/checklist-review-2026-09-11.md).
+
+- [x] Fix chapter-dialog focus return and verify Enter → Escape restores the trigger.
+- [x] Add keyboard-focusable traveller controls without persistent visual chrome; verify switch, Wave and passport access.
+- [x] Verify keyboard activation of windmill, koi feeding and campfire.
+- [x] Fix overlapping phone map labels with an always-visible two-column country selector and 44px button height.
+- [x] Verify Taiwan arrival, next-photo navigation, nested photo notes, focus return and Back in the live browser.
+- [x] Anchor country architecture beside the first photo instead of accidentally behind it. Correct the clipped spire, floor coverage and subtitle contrast found in the night view.
+- [x] Batch repeated bridge geometry. Observed draw calls fell from 2,500 to 1,162 with the triangle count unchanged; record the desktop sample separately from phone testing.
+- [x] Pass TypeScript, 63 tests, production build and all six district model validators.
+
+Remaining items below that require real phones, original content, personal decisions or optional new systems remain open. The postcard is a suggested independent Claude task; it has not been implemented in this pass.
+
 ## More room on every island
 
 - [x] Increase district ground radius from 2.9 to 4.4 units (about 2.3× the area) and the central harbor from 3.15 to 4.5 units.
 - [x] Spread district centers outward, move houses, trees, benches and garden interactions toward the perimeter, and keep exhibit sizes unchanged.
 - [x] Widen bridge walking lanes from 1.35 to 1.8 units, with matching decks and rails; preserve each island's elevation and sloping connections.
 - [x] Reposition collectibles and the boat route, expand shadow coverage, and fit the larger layout on narrow screens without collapsing zoom levels.
-- [ ] Review the new spacing and overview composition on desktop and phone screens.
+- [x] Review the new spacing and overview composition in desktop Chrome and at the phone breakpoint. Physical phone validation remains below.
 
 ## Sound effects
 
@@ -38,13 +53,13 @@ Updated: 2026-09-11. Unchecked items are pending; optional ideas are not launch 
 - [x] Enlarge the island from a 7.3 to 10.2 unit top radius and spread the six installations out. Add planted areas and a winding promenade.
 - [x] Add three visitor-controlled garden objects: a windmill that starts/stops, koi that gather for food, and a campfire that lights/extinguishes.
 - [x] Include the pond, windmill and campfire in walking collision checks and route planning. Simulate a tour of the larger island and every relocated district.
-- [x] Preserve the latest character switching/action ring, passport signpost, remembered lighting, daily routines and six-level camera zoom.
+- [x] Preserve the latest character switching/action ring, passport signpost, remembered lighting, daily routines and eight-level camera zoom.
 - [x] Replace the circular country arrangement with a recognizable 3D world map using Natural Earth coastlines and geographic country label points.
 - [x] Keep the character/binocular photo-garden experience: walk into a country, then scroll or swipe along its framed photographs.
 - [ ] Check floor-sign legibility and pointer/touch selection at every zoom level and camera angle. These signs are part of the ground and intentionally become small in the far overview.
 - [ ] Try all three garden interactions with keyboard, touch, night mode, reduced motion and a hidden/returned tab.
-- [ ] Check the world map at phone widths, especially the closely spaced Taiwan/Japan markers, and verify the north-up starting view.
-- [ ] Review the archipelago's visual composition in a browser. Automated navigation tests do not verify its appearance.
+- [x] Review the north-up world map at the phone breakpoint and replace the colliding Taiwan/Japan labels with the compact country selector.
+- [x] Review the archipelago in a browser, including daylight, night, rear and low side views. See the dated review for the limits of this pass.
 
 Map sources and projection notes: [world-map-data.md](world-map-data.md). The map is a walkable tabletop: ocean tiles can also be crossed. Unrecognized country names stay available on an “uncharted” row rather than receiving invented coordinates.
 
@@ -81,7 +96,7 @@ Results you can substantiate (optional):
 - [ ] Link each stand to its app's case study and live site.
 - [ ] Add lightweight screenshot previews to selected stands, then measure their loading cost.
 - [ ] Consider a guided project tour so visitors can discover the strongest work quickly.
-- [ ] Keep the direct HTML gallery usable on mobile and without WebGL.
+- [x] Verify the Project Arcade HTML gallery outside 3D at the phone breakpoint; standalone country/photo pages also provide an HTML path.
 
 ## 2. Replace demonstration photography and travel stories
 
@@ -106,7 +121,7 @@ Implemented: countries are grouped from the photo catalog onto a recognizable wo
 - [x] Open the world map filling the view. It was fitted as though the map stood upright, reserving 64% more vertical room than the camera's tilt ever uses, so it opened at ~69% of the screen instead of ~95%.
 - [x] Give every photograph its own address. `/atlas/[country]` and `/atlas/[country]/[photo]` are server-rendered pages with per-photo `openGraph` images, so a photo can be linked and shared, works without WebGL, and is indexable. The 3D atlas links out to them.
 - [x] Pan the world map. It only orbited, so the edges were unreachable when zoomed in; drag now moves the map, right-drag turns it, and the view is clamped to the map's own bounds.
-- [ ] **Not verified in a browser:** the map drag itself. `OrbitControls` captures the pointer, which synthetic events cannot drive, and this browser's real clicks do not reach the page.
+- [ ] Verify the map drag and pan limits with real pointer input. Desktop island orbit worked during the latest review; map panning is a separate control path.
 - [ ] Check the country map and photo garden on touch: swipe between photos, pinch zoom, and the back control.
 - [x] Push the address from inside the 3D atlas. Entering a country or opening a photo now pushes `/atlas/...` shallowly, so the URL names what is on screen and Back steps through it without reloading the scene. Verified live for opening the atlas and for Back; entering a country needs the traveller to finish walking, which an automated tab will not run.
 - [x] Stop the country landmark tracking the traveller. It was pinned to the player's x, so Taipei 101 appeared welded to a walking person; it now drifts at 0.12 of their pace like something far away.
@@ -134,12 +149,12 @@ The controls now live on the island rather than in a corner button bar: click th
 - [ ] Check each gesture while standing, walking, opening panels, and returning from a hidden tab.
 - [x] Lay two sleepers side by side. They previously lay down along their walking headings, which point wherever they last travelled, so one body could lie straight through the other.
 - [x] Remember the visitor's lighting choice across reloads, and carry night into the photo atlas, which previously always rendered in daylight.
-- [ ] **Not yet verified in a browser:** click a traveller to swap, click your own traveller to open the action ring, and click the signpost to open the passport. Automated checks cannot reach these — the world pauses itself when the tab reports hidden, which is the state an automated tab is in.
-- [ ] Confirm the `paused` guard on the traveller handlers is not too broad; districts stay clickable while paused but travellers do not.
+- [ ] Verify direct pointer selection of each traveller, the action ring and the passport signpost. The new HTML keyboard equivalents were verified; those checks do not establish the 3D hit targets.
+- [x] Review the `paused` guard: it intentionally blocks world input while a modal is open or the page is hidden. Keep this behavior; automation alone is not a reason to bypass it.
 - [x] Keep the in-world controls usable without hover. Touch devices never fire hover, so the world labels stayed hidden and the mobile hint strip replaced every span with one line — leaving tap-to-swap, the action ring, and the signpost undiscoverable on a phone once the corner buttons were gone. Labels now stay on screen for hover-less pointers, tap targets reach 44px, and the mobile hint line names the travellers.
 - [x] Let the control hint strip wrap. Four added lines would have pushed the footer wider than a tablet screen.
 - [ ] Check the action ring and traveller labels do not obscure the new floor signs at narrow widths and on touch.
-- [x] Replace free-form zoom with a six-level ladder. The buttons, wheel, and pinch all step through the same levels, defined as multiples of the zoom that fits the island so the levels adapt to the viewport.
+- [x] Replace free-form zoom with an eight-level ladder. The buttons, wheel, and pinch all step through the same levels, defined as multiples of the zoom that fits the island so the levels adapt to the viewport.
 - [ ] Confirm on a phone that pinch stepping feels right, and tune `PINCH_PER_LEVEL` if a level triggers too eagerly.
 - [ ] Check reset, tap-to-walk cancellation, and loading/error fallbacks for both avatars.
 - [ ] If more natural movement is needed, add elbow/knee articulation or a skinned rig with animation clips.
@@ -148,7 +163,7 @@ The controls now live on the island rather than in a corner button bar: click th
 
 Sources: [Blender guide](../assets/blender/README.md), [character generator](../scripts/blender/couple.py), [runtime controls](../components/world/Companions.tsx), [daily routine and rest timer](../components/world/daily-routine.ts), [zoom ladder](../components/world/camera-zoom.ts).
 
-The completed navigation and routine checks above are automated simulations in [exploration.test.mjs](../components/world/exploration.test.mjs), [daily-routine.test.mjs](../components/world/daily-routine.test.mjs), and [camera-zoom.test.mjs](../components/world/camera-zoom.test.mjs). The unchecked interaction items still require hands-on browser/device validation.
+The completed navigation and routine checks above are automated simulations in [exploration.test.mjs](../components/world/exploration.test.mjs), [daily-routine.test.mjs](../components/world/daily-routine.test.mjs), and [camera-zoom.test.mjs](../components/world/camera-zoom.test.mjs). The remaining unchecked interaction items require further browser/device validation; the latest verified keyboard and visual checks are in the dated checklist review.
 
 ## 4. Verify mobile and accessibility
 
@@ -162,7 +177,8 @@ Responsive layouts and touch controls exist. **Real iPhone and Android performan
 - [ ] Check touch movement, camera gestures, and the in-world controls together: tapping a traveller to swap, the action ring, and the passport signpost. Confirm tap targets are large enough on a phone.
 - [ ] Check photo viewers, project stories, and the passport with the on-screen keyboard open.
 - [ ] Verify reduced motion, keyboard navigation, visible focus, dialog focus return, and WebGL fallback.
-- [ ] Verify the keyboard path to the in-world actions (`Q` swap, `1`/`2`/`3` actions, `P` passport), since these are no longer HTML buttons a screen reader can reach by tabbing.
+- [x] Add HTML equivalents for traveller actions and verify keyboard switching, Wave and passport access. They become visible on focus and remain available to assistive technology.
+- [ ] Check all single-key shortcuts (`Q`, `1`/`2`/`3`, `P`) across movement and modal transitions with a screen reader running.
 - [x] Cover passport persistence in tests: a download survives a round trip through restore, and a hostile or unknown file cannot smuggle in stamps. Every storage call is wrapped, so a blocked-storage visitor keeps their choice for the visit.
 - [ ] Still to check by hand: passport persistence across a real reload on a device with storage disabled.
 
@@ -184,11 +200,11 @@ Sources: [passport UI](../components/stories/Passport.tsx), [stored-data schema]
 - [ ] Review every district description and technology list against your actual experience.
 - [ ] Add real contact and professional profile links you want public.
 - [ ] Finalize the short introduction and your frontend / AI / robotics / photography story.
-- [ ] Keep new UI copy in English for now. Add i18n only when a second language is ready to maintain.
+- [x] Keep new UI copy in English. Add i18n only when a second language is ready to maintain.
 - [x] Link the favicon. `public/favicon.svg` existed but was never referenced — only `app/icon.*` and `app/favicon.ico` are auto-detected, so `layout.tsx` now declares it.
 - [ ] Add a social sharing image for the home page using final approved artwork, and set `metadataBase` once the production domain is chosen — without it the per-photo `og:image` URLs are host-relative. Title and description are already set.
 - [ ] Choose the production domain and hosting target; deployment is still pending.
-- [ ] Run `bun run test`, `bun run check`, `bun run build`, and relevant model validators after implementation changes.
+- [x] Run tests, TypeScript, the production build and model validators after this implementation pass. Repeat when implementation changes.
 - [ ] Complete browser interaction checks and the real-device checklist before calling the site launch-ready.
 
 ## Suggested order

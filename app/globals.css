@@ -3677,3 +3677,7 @@ button {
     bottom: 190px;
   }
 }
+
+.memory-atlas.night .atlas-heading p {
+  color: #d2c5a4;
+}

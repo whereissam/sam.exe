@@ -740,7 +740,7 @@ export default function PhotoAtlas({
                 {country ? (
                   <boxGeometry
                     args={[
-                      Math.max(10, country.photos.length * 5.6 + 2),
+                      Math.max(16, country.photos.length * 5.6 + 6),
                       0.6,
                       8.5,
                     ]}
