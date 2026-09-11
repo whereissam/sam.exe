@@ -1,7 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { districts } from '../world/districts';
-import { PASSPORT_KEY, readPassport, type PassportData } from './passport-data';
+import {
+  PASSPORT_KEY,
+  describePassport,
+  readPassport,
+  type PassportData,
+} from './passport-data';
 
 export function usePassport() {
   const [visited, setVisited] = useState<string[]>([]),
@@ -55,6 +60,25 @@ export function usePassport() {
       );
     }
   }, [loaded, visited, collected, character, nickname, note]);
+  function restore(data: PassportData) {
+    setVisited(data.visited);
+    setCollected(data.collected);
+    setCharacter(data.character);
+    setNickname(data.nickname);
+    setNote(data.note);
+  }
+  function clear() {
+    setVisited([]);
+    setCollected([]);
+    setCharacter('sam');
+    setNickname('');
+    setNote('');
+    try {
+      localStorage.removeItem(PASSPORT_KEY);
+    } catch {
+      // The save effect reports unavailable storage; nothing to undo here.
+    }
+  }
   return {
     visited,
     setVisited,
@@ -69,8 +93,68 @@ export function usePassport() {
     loaded,
     status,
     updatedAt,
+    clear,
+    restore,
   };
 }
+/** Shows what an imported file holds before it replaces the current visit. */
+function RestorePreview({
+  data,
+  passport,
+  onDone,
+}: {
+  data: PassportData;
+  passport: ReturnType<typeof usePassport>;
+  onDone: () => void;
+}) {
+  const summary = describePassport(data);
+  const current = describePassport({
+    version: 1,
+    visited: passport.visited,
+    collected: passport.collected,
+    character: passport.character,
+    nickname: passport.nickname,
+    note: passport.note,
+    updatedAt: passport.updatedAt,
+  });
+  return (
+    <section className="passport-preview" aria-label="Restore preview">
+      <strong>This file holds</strong>
+      <ul>
+        <li>
+          {summary.stamps} of {summary.totalStamps} stamps
+          <span> · now {current.stamps}</span>
+        </li>
+        <li>
+          {summary.sparks} of {summary.totalSparks} sparks
+          <span> · now {current.sparks}</span>
+        </li>
+        <li>
+          Walking as {summary.character === 'sam' ? 'Sam' : 'the companion'}
+        </li>
+        {summary.nickname && <li>Signed “{summary.nickname}”</li>}
+        {summary.hasNote && <li>Includes a private note</li>}
+        {summary.savedAt && (
+          <li>Saved {summary.savedAt.toLocaleDateString()}</li>
+        )}
+      </ul>
+      <p>Restoring replaces the progress in this browser.</p>
+      <div className="passport-preview-actions">
+        <button
+          className="passport-erase"
+          onClick={() => {
+            passport.restore(data);
+            onDone();
+          }}
+        >
+          Replace my passport
+        </button>
+        <button onClick={onDone}>Cancel</button>
+      </div>
+    </section>
+  );
+}
+
 export function Passport({
   passport,
   onClose,
@@ -79,6 +163,24 @@ export function Passport({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const file = useRef<HTMLInputElement>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [pending, setPending] = useState<PassportData | null>(null);
+  const [importError, setImportError] = useState('');
+  async function chooseFile(input: HTMLInputElement) {
+    const picked = input.files?.[0];
+    input.value = '';
+    if (!picked) return;
+    setImportError('');
+    setPending(null);
+    try {
+      setPending(readPassport(await picked.text()));
+    } catch {
+      setImportError(
+        'That file is not a SAM.EXE passport, or it was saved by a newer version.',
+      );
+    }
+  }
   useEffect(() => {
     ref.current?.showModal();
     return () => ref.current?.close();
@@ -166,9 +268,59 @@ export function Passport({
         <small className="passport-save" role="status">
           {passport.status}
         </small>
-        <button className="passport-download" onClick={download}>
-          ↓ Download my passport
-        </button>
+        <div className="passport-actions">
+          <button className="passport-download" onClick={download}>
+            ↓ Download my passport
+          </button>
+          <button
+            className="passport-restore"
+            onClick={() => file.current?.click()}
+          >
+            ↥ Restore from a file
+          </button>
+          <input
+            ref={file}
+            type="file"
+            accept="application/json,.json"
+            className="passport-file"
+            aria-label="Choose a passport file to restore"
+            onChange={(event) => void chooseFile(event.currentTarget)}
+          />
+          {confirming ? (
+            <span className="passport-confirm" role="alert">
+              Erase this passport for good?
+              <button
+                className="passport-erase"
+                onClick={() => {
+                  passport.clear();
+                  setConfirming(false);
+                }}
+              >
+                Yes, erase it
+              </button>
+              <button onClick={() => setConfirming(false)}>Keep it</button>
+            </span>
+          ) : (
+            <button
+              className="passport-clear"
+              onClick={() => setConfirming(true)}
+            >
+              Clear my passport
+            </button>
+          )}
+        </div>
+        {importError && (
+          <p className="passport-import-error" role="alert">
+            {importError}
+          </p>
+        )}
+        {pending && (
+          <RestorePreview
+            data={pending}
+            passport={passport}
+            onDone={() => setPending(null)}
+          />
+        )}
         <p className="passport-privacy">
           Your passport stays in this browser and is never published. Clearing
           site data or using private browsing may erase it. Download a copy to

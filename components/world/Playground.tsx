@@ -1,13 +1,15 @@
 'use client';
+import { playSound } from '../audio/sound';
 import { useRef, useState, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { harborHeight } from './island-layout';
+import { GroundLabel } from './GroundLabel';
 import type { Mesh, MeshBasicMaterial } from 'three';
 import type { Point } from './movement';
 export const sparks = [
-  { id: 'curiosity', name: 'Curiosity', x: -1.65, z: 0 },
-  { id: 'craft', name: 'Craft', x: 1.65, z: 0 },
-  { id: 'wander', name: 'Wander', x: 0, z: -2.4 },
+  { id: 'curiosity', name: 'Curiosity', x: -12, z: -5.3 },
+  { id: 'craft', name: 'Craft', x: 12, z: 10.3 },
+  { id: 'wander', name: 'Wander', x: 0, z: 16.8 },
 ];
 export function CollectibleSparks({
   player,
@@ -44,7 +46,10 @@ export function CollectibleSparks({
     <>
       {sparks.map((spark, index) =>
         collected.includes(spark.id) ? null : (
-          <group key={spark.id} position={[spark.x, 0, spark.z]}>
+          <group
+            key={spark.id}
+            position={[spark.x, harborHeight(spark), spark.z]}
+          >
             <mesh
               ref={(element) => {
                 meshes.current[index] = element;
@@ -62,19 +67,14 @@ export function CollectibleSparks({
                 emissiveIntensity={1.8}
               />
             </mesh>
-            {/* Below the district labels' range so a spark sitting in front
-                of one never swallows the name. */}
-            <Html position={[0, 0.95, 0]} center zIndexRange={[6, 0]}>
-              <button
-                disabled={paused}
-                className="spark-control"
-                aria-label={`Collect ${spark.name} spark`}
-                title={`Collect ${spark.name}`}
-                onClick={() => onCollect(spark.id)}
-              >
-                ✦
-              </button>
-            </Html>
+            <GroundLabel
+              title={`Collect ${spark.name}`}
+              position={[0, 0.14, 0.4]}
+              width={1.6}
+              onClick={() => {
+                if (!paused) onCollect(spark.id);
+              }}
+            />
           </group>
         ),
       )}
@@ -99,6 +99,7 @@ export function Beacon({
   const color = complete ? '#b7f5c4' : lit ? '#ffba89' : '#d7a0ff';
   function activate() {
     if (paused) return;
+    playSound('discover');
     setLit((v) => !v);
     elapsed.current = 0;
     onPulse();
@@ -149,16 +150,12 @@ export function Beacon({
           depthWrite={false}
         />
       </mesh>
-      <Html position={[0, 0.92, 0]} center zIndexRange={[6, 0]}>
-        <button
-          className={`beacon-control ${lit ? 'is-lit' : ''}`}
-          disabled={paused}
-          onClick={activate}
-          aria-label="Pulse the island beacon"
-        >
-          ◎
-        </button>
-      </Html>
+      <GroundLabel
+        title="Beacon · pulse"
+        position={[0, 0.14, 0.5]}
+        width={1.65}
+        onClick={activate}
+      />
     </group>
   );
 }

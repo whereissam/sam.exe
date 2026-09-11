@@ -1,10 +1,5 @@
-import { districts } from './districts';
-import {
-  clearSegment,
-  walkable,
-  INSTALLATION_RADIUS,
-  type Point,
-} from './movement';
+import { islandObstacles, harborWaypoints } from './island-layout';
+import { clearSegment, walkable, type Point } from './movement';
 
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.z - b.z);
 type Edge = { to: number; distance: number };
@@ -12,18 +7,19 @@ let graph: { points: Point[]; edges: Edge[][] } | undefined;
 function islandGraph() {
   if (graph) return graph;
   // A circumscribed polygon leaves clearance even along adjacent straight edges.
-  const points = districts
-    .flatMap((d) =>
+  const points = [
+    ...harborWaypoints,
+    ...islandObstacles.flatMap((d) =>
       Array.from({ length: 24 }, (_, i) => {
         const angle = (i * Math.PI * 2) / 24,
-          radius = INSTALLATION_RADIUS + 0.055;
+          radius = d.radius + 0.055;
         return {
-          x: d.position[0] + Math.cos(angle) * radius,
-          z: d.position[2] + Math.sin(angle) * radius,
+          x: d.x + Math.cos(angle) * radius,
+          z: d.z + Math.sin(angle) * radius,
         };
       }),
-    )
-    .filter(walkable);
+    ),
+  ].filter(walkable);
   const edges: Edge[][] = points.map(() => []);
   for (let i = 0; i < points.length; i++)
     for (let j = i + 1; j < points.length; j++) {

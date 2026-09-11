@@ -1,10 +1,12 @@
 import { test } from 'bun:test';
 import assert from 'node:assert/strict';
 import { Exploration } from './exploration.ts';
+import { GARDEN_SPOTS } from './island-layout';
+import { districts } from './districts';
 import { planRoute } from './navigation.ts';
 import { clearSegment, walkable, SPAWN } from './movement.ts';
 
-function simulate(model, steps = 1200, direction = { x: 0, z: 0 }) {
+function simulate(model, steps = 2000, direction = { x: 0, z: 0 }) {
   let awake = true;
   for (let i = 0; i < steps; i++) {
     const before = Object.fromEntries(
@@ -27,8 +29,9 @@ function simulate(model, steps = 1200, direction = { x: 0, z: 0 }) {
   return awake;
 }
 test('tap routes go around buildings instead of timing out at their front', () => {
-  const start = { x: 3.5, z: 0.8 },
-    goal = { x: 3.5, z: 5.0 };
+  const [x, , z] = districts[3].position;
+  const start = { x: x - 2, z },
+    goal = { x: x + 2, z };
   assert.equal(clearSegment(start, goal), false);
   const route = planRoute(start, goal);
   assert.ok(route && route.length > 1);
@@ -40,7 +43,7 @@ test('tap routes go around buildings instead of timing out at their front', () =
   assert.deepEqual(last, goal);
   const model = new Exploration();
   model.walkers.sam.position = start;
-  model.walkers.companion.position = { x: 2.6, z: 0.8 };
+  model.walkers.companion.position = { x: start.x, z: start.z - 0.85 };
   assert.equal(model.goTo(goal), true);
   assert.equal(simulate(model), false);
   assert.deepEqual(model.walkers.sam.position, goal);
@@ -49,11 +52,7 @@ test('tap routes go around buildings instead of timing out at their front', () =
 test('a tour around all sides keeps both travellers moving safely and eventually idle', () => {
   const model = new Exploration();
   for (const goal of [
-    { x: 3.5, z: 5.0 },
-    { x: 5.6, z: 0 },
-    { x: 1.4, z: -4 },
-    { x: -5.5, z: 0 },
-    { x: -2, z: 4 },
+    ...districts.map((d) => ({ x: d.position[0], z: d.position[2] + 1.65 })),
     SPAWN,
   ]) {
     assert.equal(model.goTo(goal), true);
@@ -69,7 +68,13 @@ test('a tour around all sides keeps both travellers moving safely and eventually
 });
 test('switching cancels the old destination without teleporting or retaining a looping trail', () => {
   const model = new Exploration();
-  model.goTo({ x: 3.5, z: 5.0 });
+  assert.equal(
+    model.goTo({
+      x: districts[3].position[0],
+      z: districts[3].position[2] + 1.65,
+    }),
+    true,
+  );
   simulate(model, 90);
   for (let i = 0; i < 12; i++) {
     const before = JSON.stringify(model.walkers);
@@ -81,7 +86,13 @@ test('switching cancels the old destination without teleporting or retaining a l
 });
 test('keyboard input cancels tap navigation, and reset retains the chosen traveller', () => {
   const model = new Exploration();
-  model.goTo({ x: 5.6, z: 0 });
+  assert.equal(
+    model.goTo({
+      x: districts[3].position[0],
+      z: districts[3].position[2] + 1.65,
+    }),
+    true,
+  );
   simulate(model, 1, { x: -1, z: 0 });
   assert.equal(model.destination, null);
   assert.ok(model.walkers.sam.position.x < 0);
@@ -93,7 +104,7 @@ test('keyboard input cancels tap navigation, and reset retains the chosen travel
 test('invalid destinations, large frame gaps, and blocked manual movement settle safely', () => {
   const model = new Exploration();
   for (const goal of [
-    { x: 0, z: 5 },
+    { x: districts[5].position[0], z: districts[5].position[2] },
     { x: 100, z: 0 },
     { x: NaN, z: 0 },
   ])
@@ -102,4 +113,18 @@ test('invalid destinations, large frame gaps, and blocked manual movement settle
   assert.ok(model.walkers.sam.position.x <= 0.12 + 1e-6);
   simulate(model, 500, { x: 1, z: 0 });
   assert.equal(simulate(model, 500), false);
+});
+
+test('the expanded garden and every relocated district can be toured without crossing scenery', () => {
+  const model = new Exploration();
+  const goals = [
+    ...districts.map((d) => ({ x: d.position[0], z: d.position[2] + 1.65 })),
+    ...Object.values(GARDEN_SPOTS).map((p) => ({ x: p.x, z: p.z + 0.9 })),
+    SPAWN,
+  ];
+  for (const goal of goals) {
+    assert.equal(model.goTo(goal), true);
+    assert.equal(simulate(model), false);
+    assert.deepEqual(model.walkers.sam.position, goal);
+  }
 });

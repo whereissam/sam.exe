@@ -1,4 +1,5 @@
 'use client';
+/* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- Escape already closes these dialogs through onCancel, so the click handler only adds backdrop dismissal for pointer users. */
 import {
   Component,
   lazy,
@@ -24,17 +25,24 @@ import {
   Maximize2,
   Minimize2,
 } from 'lucide-react';
+import { SoundToggle } from '@/components/audio/SoundToggle';
+import { mountSound, playSound } from '@/components/audio/sound';
 import { districts, type District } from '@/components/world/districts';
 import { Passport, usePassport } from '@/components/stories/Passport';
+import { isBackdropClick } from '@/components/ui/backdrop-click';
+import {
+  isNightHour,
+  routineAtHour,
+  routineLabels,
+  readLighting,
+  LIGHTING_KEY,
+  type Lighting,
+} from '@/components/world/daily-routine';
 import type { Action, Gesture } from '@/components/world/Companions';
 const PerformancePanel = lazy(
   () => import('@/components/performance/PerformancePanel'),
 );
-const Photography = lazy(() =>
-  import('@/components/stories/Stories').then((m) => ({
-    default: m.Photography,
-  })),
-);
+const PhotoAtlas = lazy(() => import('@/components/stories/PhotoAtlas'));
 const Travel = lazy(() =>
   import('@/components/stories/Stories').then((m) => ({ default: m.Travel })),
 );
@@ -61,6 +69,7 @@ class SceneBoundary extends Component<
   }
 }
 export default function Home() {
+  useEffect(mountSound, []);
   const passport = usePassport();
   const {
     visited,
@@ -78,6 +87,7 @@ export default function Home() {
   const [passportOpen, setPassportOpen] = useState(false);
   const [action, setAction] = useState<Action | null>(null);
   function perform(kind: Gesture) {
+    playSound(kind);
     setAction((a) => ({ kind, sequence: (a?.sequence ?? 0) + 1 }));
     setNotice(
       kind === 'celebrate'
@@ -92,6 +102,7 @@ export default function Home() {
     [notice, setNotice] = useState<string | null>(null),
     [benchmarking, setBenchmarking] = useState(false),
     [mobile, setMobile] = useState(true),
+    [touch, setTouch] = useState(false),
     [active, setActive] = useState(true),
     [moving, setMoving] = useState(false),
     [selected, setSelected] = useState<District | null>(null),
@@ -99,6 +110,30 @@ export default function Home() {
     [night, setNight] = useState(false),
     [reset, setReset] = useState(0),
     [reduced, setReduced] = useState(false);
+  const [localTime, setLocalTime] = useState<Date | null>(null);
+  // Holds the visitor's remembered choice, or null to follow their local hour.
+  const lighting = useRef<Lighting | null>(null);
+  const routine = routineAtHour(localTime?.getHours() ?? 12, night);
+  useEffect(() => {
+    // Restore a remembered choice first, so the clock below does not overrule it.
+    try {
+      lighting.current = readLighting(localStorage.getItem(LIGHTING_KEY));
+    } catch {
+      // Storage can be unavailable; falling back to the clock is fine.
+    }
+    const tick = () => {
+      const now = new Date();
+      setLocalTime(now);
+      setNight(
+        lighting.current
+          ? lighting.current === 'night'
+          : isNightHour(now.getHours()),
+      );
+    };
+    tick();
+    const timer = setInterval(tick, 60000);
+    return () => clearInterval(timer);
+  }, []);
   const keys = useRef(new Set<string>());
   const close = useRef<HTMLButtonElement>(null);
   const detailDialog = useRef<HTMLDialogElement>(null);
@@ -109,6 +144,7 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [notice]);
   function collectSpark(id: string) {
+    if (!collected.includes(id)) playSound('discover');
     if (collected.includes(id)) return;
     setCollected((v) => (v.includes(id) ? v : [...v, id]));
     setNotice(
@@ -118,6 +154,7 @@ export default function Home() {
     );
   }
   function select(d: District) {
+    playSound('open');
     previousFocus.current = document.activeElement as HTMLElement;
     setSelected(d);
     setVisited((v) => (v.includes(d.id) ? v : [...v, d.id]));
@@ -139,6 +176,8 @@ export default function Home() {
     };
   }, [perf, ready]);
   function dismiss() {
+    // Background controls are inert until the native modal is closed.
+    detailDialog.current?.close();
     setSelected(null);
     previousFocus.current?.focus();
   }
@@ -155,6 +194,10 @@ export default function Home() {
       !!connection?.saveData ||
       ['slow-2g', '2g'].includes(connection?.effectiveType ?? '');
     setMobile(constrained);
+    // A hover-less pointer never sees the world labels, so they stay put instead.
+    setTouch(matchMedia('(hover: none)').matches);
+    // A hover-less pointer never sees the world labels, so they stay put instead.
+    setTouch(matchMedia('(hover: none)').matches);
     setReady(
       !connection?.saveData &&
         !['slow-2g', '2g'].includes(connection?.effectiveType ?? ''),
@@ -220,6 +263,15 @@ export default function Home() {
         setMoving(true);
       }
       if (key === 'e' && near) select(near);
+      // The island now owns these actions, so keep a keyboard path to each one.
+      if (key === 'q') setCharacter((c) => (c === 'sam' ? 'companion' : 'sam'));
+      if (key === 'p') {
+        keys.current.clear();
+        setMoving(false);
+        setPassportOpen(true);
+      }
+      const emote = { 1: 'wave', 2: 'jump', 3: 'celebrate' } as const;
+      if (key in emote) perform(emote[key as unknown as keyof typeof emote]);
     }
     const up = (e: KeyboardEvent) => {
       keys.current.delete(e.key.toLowerCase());
@@ -321,6 +373,14 @@ export default function Home() {
                 keys={keys}
                 paused={!!selected || passportOpen || !active}
                 character={character}
+                onSwitch={setCharacter}
+                onAction={perform}
+                onPassport={() => {
+                  keys.current.clear();
+                  setMoving(false);
+                  setPassportOpen(true);
+                }}
+                visitedCount={visited.length}
                 action={action}
                 lowPower={mobile}
                 moving={moving || benchmarking}
@@ -334,55 +394,56 @@ export default function Home() {
                 reset={reset}
                 zoomCommand={zoomCommand}
                 night={night}
+                routine={routine}
                 reduced={reduced}
+                touch={touch}
               />
             </Suspense>
           )}
         </SceneBoundary>
       </section>
-      <div className="traveller-tools">
-        <button onClick={() => select(districts[1])}>↗ Projects</button>
-        <button
-          onClick={() => {
-            keys.current.clear();
-            setMoving(false);
-            setPassportOpen(true);
-          }}
+      {ready && (
+        <div
+          className="world-a11y-actions"
+          role="group"
+          aria-label="Traveller actions"
         >
-          ▧ My passport <small>{visited.length}/6</small>
-        </button>
-        {ready && (
-          <>
-            <button
-              disabled={!!selected || passportOpen}
-              onClick={() =>
-                setCharacter((c) => (c === 'sam' ? 'companion' : 'sam'))
-              }
-              aria-label="Switch controlled traveller"
-            >
-              ⇄ {character === 'sam' ? 'Sam' : 'Companion'}
-            </button>
-            <button
-              disabled={!!selected || passportOpen}
-              onClick={() => perform('wave')}
-            >
-              Wave
-            </button>
-            <button
-              disabled={!!selected || passportOpen}
-              onClick={() => perform('jump')}
-            >
-              Jump
-            </button>
-            <button
-              disabled={!!selected || passportOpen}
-              onClick={() => perform('celebrate')}
-            >
-              Celebrate
-            </button>
-          </>
-        )}
-      </div>
+          <button
+            onClick={() =>
+              setCharacter((c) => (c === 'sam' ? 'companion' : 'sam'))
+            }
+          >
+            Switch to {character === 'sam' ? 'companion' : 'Sam'}
+          </button>
+          <button onClick={() => perform('wave')}>Wave</button>
+          <button onClick={() => perform('jump')}>Jump</button>
+          <button onClick={() => perform('celebrate')}>Celebrate</button>
+          <button
+            onClick={() => {
+              keys.current.clear();
+              setMoving(false);
+              setPassportOpen(true);
+            }}
+          >
+            Open my passport
+          </button>
+        </div>
+      )}
+      {ready && localTime && (
+        <div
+          className="routine-note"
+          title="Your local time sets their daily routine. Moving or performing an action wakes them up."
+        >
+          <span>
+            {localTime.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}{' '}
+            LOCAL
+          </span>
+          <small>{routineLabels[routine]}</small>
+        </div>
+      )}
       {passportOpen && (
         <Passport passport={passport} onClose={() => setPassportOpen(false)} />
       )}
@@ -419,10 +480,20 @@ export default function Home() {
               night ? 'Switch to sunset lighting' : 'Switch to night lighting'
             }
             title="Change lighting"
-            onClick={() => setNight(!night)}
+            onClick={() => {
+              const next: Lighting = night ? 'day' : 'night';
+              lighting.current = next;
+              setNight(next === 'night');
+              try {
+                localStorage.setItem(LIGHTING_KEY, next);
+              } catch {
+                // A visitor with storage blocked keeps the choice for this visit only.
+              }
+            }}
           >
             {night ? <Moon size={18} /> : <Sun size={18} />}
           </button>
+          <SoundToggle />
           <button
             aria-label="Reset camera and explorer"
             title="Reset view"
@@ -523,6 +594,13 @@ export default function Home() {
             <kbd>D</kbd> move
           </span>
           <span>Tap ground to walk</span>
+          <span>Tap a traveller to swap or act</span>
+          <span>Tap the signpost for your passport</span>
+          <span>
+            <kbd>Q</kbd> swap · <kbd>1</kbd>
+            <kbd>2</kbd>
+            <kbd>3</kbd> actions · <kbd>P</kbd> passport
+          </span>
           <span>Drag to orbit</span>
           <span>Scroll / pinch to zoom</span>
           <span>Right-drag to pan</span>
@@ -578,7 +656,10 @@ export default function Home() {
             event.preventDefault();
             dismiss();
           }}
-          className={`detail-panel ${['photography', 'travel', 'frontend'].includes(selected.id) ? 'story-panel' : ''} ${selected.id === 'photography' ? 'gallery-panel' : ''}`}
+          onClick={(event) => {
+            if (isBackdropClick(event)) dismiss();
+          }}
+          className={`detail-panel ${['photography', 'travel', 'frontend'].includes(selected.id) ? 'story-panel' : ''} ${selected.id === 'photography' ? 'atlas-panel' : ''}`}
           aria-label={selected.title}
         >
           <button
@@ -605,8 +686,14 @@ export default function Home() {
             <p>{selected.note}</p>
           </div>
           {selected.id === 'photography' && (
-            <Suspense fallback={<p>Opening the contact sheet…</p>}>
-              <Photography onClose={dismiss} />
+            <Suspense fallback={<p>Opening the memory atlas…</p>}>
+              <PhotoAtlas
+                character={character}
+                reduced={reduced}
+                lowPower={mobile}
+                routine={routine}
+                night={night}
+              />
             </Suspense>
           )}
           {selected.id === 'travel' && (

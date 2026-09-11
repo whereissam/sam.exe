@@ -1,4 +1,5 @@
 'use client';
+import { harborHeight } from './island-layout';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Html, OrbitControls, Sparkles } from '@react-three/drei';
 import {
@@ -6,18 +7,37 @@ import {
   type ComponentRef,
   createContext,
   useContext,
+  useCallback,
   useEffect,
   useRef,
   useState,
 } from 'react';
 import * as THREE from 'three';
 import { districts, type District } from './districts';
+import type { DailyRoutine } from './daily-routine';
 import RenderProbe from '../performance/RenderProbe';
 import { DistrictModel } from './DistrictModel';
+import { GroundLabel } from './GroundLabel';
+import { Harbor, ExhibitBack } from './Harbor';
+import { IslandGarden } from './IslandGarden';
 import { Beacon, CollectibleSparks } from './Playground';
-import Companions, { type Character, type Action } from './Companions';
+import Companions, {
+  type Gesture,
+  type Character,
+  type Action,
+} from './Companions';
 
 import { walkable, SPAWN, type Point } from './movement';
+import {
+  clampLevel,
+  fittedZoom,
+  stepFromPinch,
+  stepsFromWheel,
+  zoomForLevel,
+  FITTED_LEVEL,
+  ZOOM_MAX,
+  ZOOM_MIN,
+} from './camera-zoom';
 
 const ReducedMotion = createContext(false);
 type Vec = [number, number, number];
@@ -133,7 +153,9 @@ function Robot({ small = false }: { small?: boolean }) {
 function Installation({
   district,
   onSelect,
+  night,
 }: {
+  night: boolean;
   district: District;
   onSelect: (d: District) => void;
 }) {
@@ -164,6 +186,7 @@ function Installation({
           setHovered(false);
         }}
       >
+        <ExhibitBack id={id} />
         <DistrictModel id={id}>
           {id === 'photography' && (
             <group>
@@ -337,42 +360,13 @@ function Installation({
           )}
         </DistrictModel>
       </group>
-      <Html
-        position={[0, id === 'blockchain' ? 4.1 : 3.2, 0]}
-        center
-        zIndexRange={[10, 0]}
-      >
-        <button
-          className="world-label"
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          onFocus={() => setHovered(true)}
-          onBlur={() => setHovered(false)}
-          onClick={() => onSelect(district)}
-          aria-label={`Explore ${district.title}`}
-          style={{ '--district': color } as React.CSSProperties}
-        >
-          <span>{district.number}</span>
-          {district.title}
-          <b>↗</b>
-        </button>
-      </Html>
-    </group>
-  );
-}
-function Tree({ position, scale = 1 }: { position: Vec; scale?: number }) {
-  return (
-    <group position={position} scale={scale}>
-      <Box position={[0, 0.45, 0]} size={[0.15, 0.9, 0.15]} color="#9f7c85" />
-      {[0, 1, 2].map((i) => (
-        <mesh key={i} position={[0, 0.85 + i * 0.4, 0]} castShadow>
-          <coneGeometry args={[0.65 - i * 0.14, 0.85, 5]} />
-          <meshStandardMaterial
-            color={['#8c945d', '#b4b76e', '#d8ca83'][i]}
-            flatShading
-          />
-        </mesh>
-      ))}
+      <GroundLabel
+        title={district.title}
+        number={district.number}
+        position={[0, 0.16, 1.45]}
+        onClick={() => onSelect(district)}
+        dark={night}
+      />
     </group>
   );
 }
@@ -383,25 +377,61 @@ function CameraControls({
   paused,
   benchmarking,
   zoomCommand,
+  reduced,
 }: {
   reset: number;
   paused: boolean;
   benchmarking: boolean;
   zoomCommand: ZoomCommand;
+  reduced: boolean;
 }) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
-  const { get, invalidate, size } = useThree();
+  const { get, invalidate, size, gl } = useThree();
+  const fitted = useRef(1);
+  const level = useRef(FITTED_LEVEL);
+  const targetZoom = useRef(0);
+  const zoomAt = useCallback(
+    (next: number) => {
+      level.current = clampLevel(next);
+      targetZoom.current = zoomForLevel(fitted.current, level.current);
+      if (reduced) {
+        const camera = get().camera;
+        camera.zoom = targetZoom.current;
+        camera.updateProjectionMatrix();
+        controls.current?.update();
+      }
+      invalidate();
+    },
+    [get, invalidate, reduced],
+  );
+  /** After a level change the camera eases to it; nothing else drives zoom. */
+  useFrame(() => {
+    if (!targetZoom.current) return;
+    const camera = get().camera;
+    const gap = targetZoom.current - camera.zoom;
+    if (Math.abs(gap) < 0.05) {
+      if (camera.zoom !== targetZoom.current) {
+        camera.zoom = targetZoom.current;
+        camera.updateProjectionMatrix();
+        controls.current?.update();
+      }
+      return;
+    }
+    camera.zoom += gap * 0.22;
+    camera.updateProjectionMatrix();
+    controls.current?.update();
+    invalidate();
+  });
   useEffect(() => {
     const camera = get().camera;
-    camera.position.set(12, 12, 16);
+    camera.position.set(17, 18, 23);
     // The chrome above and below the island is a fixed ~160px on a tall
     // screen, but it folds up on a short one — reserving the full 160 there
     // leaves the island a pinhole and its labels pile on top of each other.
-    const reserved = Math.min(160, size.height * 0.2);
-    camera.zoom = Math.max(
-      27,
-      Math.min(size.width / 18, (size.height - reserved) / 14, 75),
-    );
+    fitted.current = fittedZoom(size.width, size.height);
+    camera.zoom = zoomForLevel(fitted.current, FITTED_LEVEL);
+    level.current = FITTED_LEVEL;
+    targetZoom.current = camera.zoom;
     camera.updateProjectionMatrix();
     controls.current?.target.set(0, 0, 0);
     controls.current?.update();
@@ -409,34 +439,135 @@ function CameraControls({
   }, [get, reset, size.width, size.height, invalidate]);
   useEffect(() => {
     if (!zoomCommand.direction) return;
-    const camera = get().camera;
-    camera.zoom = THREE.MathUtils.clamp(
-      camera.zoom * (zoomCommand.direction > 0 ? 1.3 : 1 / 1.3),
-      15,
-      220,
-    );
-    camera.updateProjectionMatrix();
-    controls.current?.update();
-    invalidate();
-  }, [get, zoomCommand, invalidate]);
+    zoomAt(level.current + (zoomCommand.direction > 0 ? 1 : -1));
+  }, [zoomCommand, zoomAt]);
+  /** Wheel and pinch step through the same ladder, so zoom never lands between
+   *  levels. OrbitControls' own continuous zoom stays off for that reason. */
+  useEffect(() => {
+    const element = gl.domElement;
+    let wheel = 0;
+    let pinch: number | null = null;
+    const spread = (touches: TouchList) =>
+      Math.hypot(
+        touches[0].clientX - touches[1].clientX,
+        touches[0].clientY - touches[1].clientY,
+      );
+    const onWheel = (event: WheelEvent) => {
+      if (paused) return;
+      event.preventDefault();
+      wheel += event.deltaY;
+      const { steps, rest } = stepsFromWheel(wheel);
+      wheel = rest;
+      if (steps) zoomAt(level.current + steps);
+    };
+    const onTouchStart = (event: TouchEvent) => {
+      pinch = event.touches.length === 2 ? spread(event.touches) : null;
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (paused || pinch === null || event.touches.length !== 2) return;
+      const now = spread(event.touches);
+      const step = stepFromPinch(now / pinch);
+      if (step) {
+        zoomAt(level.current + step);
+        pinch = now;
+      }
+    };
+    const onTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length < 2) pinch = null;
+    };
+    element.addEventListener('wheel', onWheel, { passive: false });
+    element.addEventListener('touchstart', onTouchStart, { passive: true });
+    element.addEventListener('touchmove', onTouchMove, { passive: true });
+    element.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      element.removeEventListener('wheel', onWheel);
+      element.removeEventListener('touchstart', onTouchStart);
+      element.removeEventListener('touchmove', onTouchMove);
+      element.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [gl, paused, zoomAt]);
   return (
     <OrbitControls
       ref={controls}
       makeDefault
       enablePan
-      enableZoom
-      zoomToCursor
+      enableZoom={false}
       screenSpacePanning
-      minZoom={15}
-      maxZoom={220}
+      minZoom={ZOOM_MIN}
+      maxZoom={ZOOM_MAX}
       minPolarAngle={0.15}
       maxPolarAngle={Math.PI / 2 - 0.05}
-      touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
+      touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.PAN }}
       enabled={!paused}
       enableDamping={false}
       autoRotate={!paused && benchmarking}
       autoRotateSpeed={0.12}
     />
+  );
+}
+
+/** The passport lives on the island: a little signpost beside the landing path. */
+function PassportPost({
+  paused,
+  visitedCount,
+  onOpen,
+  touch,
+}: {
+  paused: boolean;
+  visitedCount: number;
+  onOpen: () => void;
+  touch: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  useEffect(() => {
+    if (!hovered || paused) return;
+    document.body.style.cursor = 'pointer';
+    return () => {
+      document.body.style.cursor = '';
+    };
+  }, [hovered, paused]);
+  return (
+    <group
+      position={[-1.55, 0.12, 1.95]}
+      onClick={(event) => {
+        if (paused || event.delta > 5) return;
+        event.stopPropagation();
+        setHovered(false);
+        onOpen();
+      }}
+      onPointerOver={(event) => {
+        if (paused) return;
+        event.stopPropagation();
+        setHovered(true);
+      }}
+      onPointerOut={() => setHovered(false)}
+    >
+      <Box position={[0, 0.42, 0]} size={[0.09, 0.84, 0.09]} color="#8a6b45" />
+      <Box
+        position={[0, 0.92, 0]}
+        size={[0.66, 0.44, 0.07]}
+        color="#f0dcae"
+        glow={hovered && !paused}
+      />
+      <Box
+        position={[0, 0.92, 0.05]}
+        size={[0.4, 0.05, 0.02]}
+        color="#b08a56"
+      />
+      <Box position={[0, 0.8, 0.05]} size={[0.3, 0.04, 0.02]} color="#c8a271" />
+      {(hovered || touch) && !paused && (
+        <Html
+          center
+          position={[0, 1.5, 0]}
+          zIndexRange={[20, 0]}
+          style={{ pointerEvents: 'none' }}
+        >
+          <span className={`world-hint ${hovered ? 'is-near' : ''}`}>
+            My passport · {visitedCount}/6
+          </span>
+        </Html>
+      )}
+    </group>
   );
 }
 
@@ -458,6 +589,12 @@ export default function World({
   character,
   action,
   zoomCommand,
+  routine,
+  onSwitch,
+  onAction,
+  onPassport,
+  visitedCount,
+  touch,
 }: {
   onSelect: (d: District) => void;
   onNear: (d: District | null) => void;
@@ -476,6 +613,12 @@ export default function World({
   character: Character;
   action: Action | null;
   zoomCommand: ZoomCommand;
+  routine: DailyRoutine;
+  onSwitch: (character: Character) => void;
+  onAction: (kind: Gesture) => void;
+  onPassport: () => void;
+  visitedCount: number;
+  touch: boolean;
 }) {
   const [target, setTarget] = useState<Point | null>(null);
   const playerPosition = useRef<Point>({ ...SPAWN });
@@ -486,7 +629,7 @@ export default function World({
     <Canvas
       fallback={
         <div className="scene-fallback">
-          WebGL is unavailable. Explore the districts below.
+          Explore the districts with the chapter buttons below.
         </div>
       }
       shadows={!lowPower}
@@ -519,95 +662,40 @@ export default function World({
         intensity={night ? 1 : 2}
         castShadow={!lowPower}
         shadow-mapSize={[2048, 2048]}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
+        shadow-camera-left={-25}
+        shadow-camera-right={25}
+        shadow-camera-top={25}
+        shadow-camera-bottom={-25}
         shadow-normalBias={0.04}
       />
       <Suspense fallback={null}>
         <ReducedMotion.Provider value={reduced || lowPower}>
           <group position={[0, -0.8, 0]}>
-            <mesh
-              position={[0, -0.55, 0]}
-              receiveShadow
-              castShadow
-              onClick={(event) => {
-                if (
-                  paused ||
-                  event.delta > 5 ||
-                  !event.face ||
-                  event.face.normal.y < 0.5
-                )
-                  return;
-                const point = { x: event.point.x, z: event.point.z };
-                if (walkable(point)) {
-                  event.stopPropagation();
-                  setTarget(point);
-                }
+            <Harbor
+              night={night}
+              paused={paused}
+              reduced={reduced || lowPower}
+              onWalk={(point) => {
+                if (walkable(point)) setTarget(point);
               }}
-            >
-              <cylinderGeometry args={[7.3, 6.5, 1.1, 8]} />
-              <meshStandardMaterial color="#d1b36e" flatShading />
-            </mesh>
-            <mesh position={[0, -1.6, 0]}>
-              <cylinderGeometry args={[6.5, 3.7, 1.3, 8]} />
-              <meshStandardMaterial color="#a5824d" flatShading />
-            </mesh>
-            <mesh position={[0, -2.65, 0]}>
-              <coneGeometry args={[3.7, 1.6, 8]} />
-              <meshStandardMaterial color="#725936" flatShading />
-            </mesh>
-            <Box
-              position={[0, 0.03, 0]}
-              size={[1.5, 0.07, 11]}
-              color="#ead49a"
             />
-            <Box
-              position={[0, 0.04, 0]}
-              size={[11, 0.08, 1.3]}
-              color="#ead49a"
+            <IslandGarden
+              paused={paused}
+              reduced={reduced || lowPower}
+              night={night}
             />
-            {Array.from({ length: 12 }, (_, i) => (
-              <Box
-                key={i}
-                position={[0, 0.09, -5.5 + i]}
-                size={[0.055, 0.02, 0.35]}
-                color="#eac4ae"
-              />
-            ))}
             {districts.map((d) => (
-              <Installation key={d.id} district={d} onSelect={onSelect} />
-            ))}
-            {[
-              [-5.5, 0, 0],
-              [-1.8, 0, -5],
-              [1, 0, -5.5],
-              [5.4, 0, 0],
-              [-1.8, 0, 5.5],
-              [5, 0, 4.2],
-              [-5.5, 0, -3.7],
-            ].map((p, i) => (
-              <Tree key={i} position={p as Vec} scale={0.65 + (i % 3) * 0.18} />
-            ))}
-            {[-5, -2, 2, 5].map((x, i) => (
-              <group key={x} position={[x, 0, i % 2 ? 1 : -1]}>
-                <Box
-                  position={[0, 0.52, 0]}
-                  size={[0.07, 1, 0.07]}
-                  color="#c7a5b3"
-                />
-                <Box
-                  position={[0, 1.05, 0]}
-                  size={[0.22, 0.16, 0.22]}
-                  color="#ffba89"
-                  glow
-                />
-              </group>
+              <Installation
+                key={d.id}
+                district={d}
+                onSelect={onSelect}
+                night={night}
+              />
             ))}
             <Companions
               character={character}
               action={action}
+              routine={routine}
               keys={keys}
               paused={paused}
               onNear={onNear}
@@ -616,6 +704,15 @@ export default function World({
               onArrive={() => setTarget(null)}
               positionRef={playerPosition}
               reduced={reduced}
+              onSwitch={onSwitch}
+              onAction={onAction}
+              touch={touch}
+            />
+            <PassportPost
+              paused={paused}
+              visitedCount={visitedCount}
+              onOpen={onPassport}
+              touch={touch}
             />
             <CollectibleSparks
               player={playerPosition}
@@ -632,7 +729,7 @@ export default function World({
             />
             {target && (
               <Ring
-                position={[target.x, 0.13, target.z]}
+                position={[target.x, harborHeight(target) + 0.13, target.z]}
                 radius={0.2}
                 color="#f5bc79"
               />
@@ -655,6 +752,7 @@ export default function World({
         paused={paused}
         benchmarking={benchmarking}
         zoomCommand={zoomCommand}
+        reduced={reduced}
       />
     </Canvas>
   );

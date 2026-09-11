@@ -5,7 +5,7 @@ export const districts = [
     title: 'Robotics Lab',
     tag: 'HUMAN × MACHINE',
     color: '#b7f5c4',
-    position: [-3.6, 0, -2.6] as [number, number, number],
+    position: [-12, 1.2, -7.8] as [number, number, number],
     description:
       'Building the bridge between human intention and robotic motion.',
     technologies: ['ROS 2', 'Unitree', 'MuJoCo', 'Isaac Sim'],
@@ -17,7 +17,7 @@ export const districts = [
     title: 'Project Arcade',
     tag: 'IDEAS → EXPERIENCES',
     color: '#f5bc79',
-    position: [-3.7, 0, 2.6] as [number, number, number],
+    position: [-12, 0.35, 7.8] as [number, number, number],
     description:
       'A collection of things built for the web. Step inside, look closer, and try them for yourself.',
     technologies: ['React', 'TypeScript', 'Three.js', 'WebGL'],
@@ -29,7 +29,7 @@ export const districts = [
     title: 'Blockchain Hub',
     tag: 'CONNECTED BY DESIGN',
     color: '#d7a0ff',
-    position: [3.6, 0, -2.2] as [number, number, number],
+    position: [12, 2.1, -7.8] as [number, number, number],
     description:
       'Exploring the intersection of decentralized networks and AI infrastructure.',
     technologies: ['DeFi', 'On-chain data', 'AI infrastructure'],
@@ -41,7 +41,7 @@ export const districts = [
     title: 'AI Observatory',
     tag: 'THE NEXT CHAPTER',
     color: '#ff927b',
-    position: [3.5, 0, 3] as [number, number, number],
+    position: [12, 0.7, 7.8] as [number, number, number],
     description:
       'Following a question beyond the screen. What happens when intelligence gets a body?',
     technologies: ['AI agents', 'Embodied AI', 'Simulation'],
@@ -53,7 +53,7 @@ export const districts = [
     title: 'The Darkroom',
     tag: 'A DIFFERENT WAY OF SEEING',
     color: '#e8d4a1',
-    position: [0, 0, -5] as [number, number, number],
+    position: [0, 2.8, -14.3] as [number, number, number],
     description:
       'Looking closer. Staying longer. Collecting the light between destinations.',
     technologies: ['Photography', 'Visual stories', 'Field notes'],
@@ -65,7 +65,7 @@ export const districts = [
     title: 'Elsewhere Station',
     tag: 'HOME IS A MOVING POINT',
     color: '#93dce1',
-    position: [0, 0, 5] as [number, number, number],
+    position: [0, -0.4, 14.3] as [number, number, number],
     description:
       'A life across time zones. Places become stories, and stories become part of what I build.',
     technologies: ['Slow travel', 'Remote life', 'Travel journals'],
