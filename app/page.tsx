@@ -25,6 +25,8 @@ import {
   Maximize2,
   Minimize2,
 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { SoundToggle } from '@/components/audio/SoundToggle';
 import { mountSound, playSound } from '@/components/audio/sound';
 import { districts, type District } from '@/components/world/districts';
@@ -69,6 +71,7 @@ class SceneBoundary extends Component<
   }
 }
 export default function Home() {
+  const router = useRouter();
   useEffect(mountSound, []);
   const passport = usePassport();
   const {
@@ -295,9 +298,9 @@ export default function Home() {
       className={`world-page ${night ? 'night' : ''} ${ready ? 'has-world' : 'lite-mode'} ${selected ? 'has-detail' : ''} ${inspecting ? 'is-inspecting' : ''}`}
     >
       <header className="masthead">
-        <a href="/" className="brand">
+        <Link href="/" className="brand">
           sam<span>✳</span>exe<sup>WORLD V.01</sup>
-        </a>
+        </Link>
         <div className="header-note">
           <i /> An independent mind. An open world.
         </div>
@@ -380,6 +383,7 @@ export default function Home() {
                   setMoving(false);
                   setPassportOpen(true);
                 }}
+                onEnterRoom={() => router.push('/room')}
                 visitedCount={visited.length}
                 action={action}
                 lowPower={mobile}
