@@ -28,6 +28,7 @@ export type Motion = {
   phase: number;
   gesture: Gesture | null;
   time: number;
+  seated?: boolean;
   viewing?: boolean;
   routine?: DailyRoutine;
 };
@@ -72,7 +73,13 @@ function Avatar({
     object.position.y =
       m.walking && !reduced ? Math.abs(Math.sin(m.phase * 10)) * 0.035 : 0;
     object.rotation.z = 0;
-    if (m.routine === 'sleep') {
+    if (m.seated) {
+      if (joints.LegL) joints.LegL.rotation.x = -1.15;
+      if (joints.LegR) joints.LegR.rotation.x = -1.15;
+      if (joints.ArmL) joints.ArmL.rotation.x = -0.72;
+      if (joints.ArmR) joints.ArmR.rotation.x = -0.72;
+      if (joints.Head) joints.Head.rotation.x = 0.1;
+    } else if (m.routine === 'sleep') {
       object.rotation.z = -Math.PI / 2;
       object.position.y = 0.18;
       if (joints.LegL) joints.LegL.rotation.x = -0.4;
