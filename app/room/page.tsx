@@ -16,7 +16,7 @@ export default function RoomPage() {
   const [reset, setReset] = useState(0);
   const [moving, setMoving] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const active = selected ? roomObjectById[selected] : null;
+  const active = selected && selected !== 'bed' ? roomObjectById[selected] : null;
 
   const inspect = useCallback((id: RoomObjectId) => {
     keys.current.clear();
@@ -84,7 +84,7 @@ export default function RoomPage() {
     <main className={`room-world ${simulation ? 'is-simulating' : ''}`}>
       <section className="room-world-canvas" aria-label="Sam's interactive 3D workshop. Walk with WASD or the arrow keys, tap the floor to move, and inspect nearby objects.">
         <Suspense fallback={<div className="room-world-loading">OPENING SAM’S ROOM…</div>}>
-          <RoomScene keys={keys} selected={selected} onSelect={inspect} onNearby={setNearby} simulation={simulation} desktopMode={desktopMode} onExitDesktop={() => setDesktopMode(false)} reset={reset} reducedMotion={reducedMotion} moving={moving} />
+          <RoomScene keys={keys} selected={selected} onSelect={inspect} onWake={() => setSelected(null)} onNearby={setNearby} simulation={simulation} desktopMode={desktopMode} onExitDesktop={() => setDesktopMode(false)} reset={reset} reducedMotion={reducedMotion} moving={moving} />
         </Suspense>
       </section>
 
@@ -101,10 +101,11 @@ export default function RoomPage() {
 
       {nearby && !selected && !desktopMode && (
         <button className="room-world-prompt" onClick={() => inspect(nearby)}>
-          <kbd>E</kbd><span>{nearby === 'workstation' ? 'SIT' : 'INSPECT'}</span>{nearby === 'workstation' ? 'OPEN DESKTOP' : roomObjectById[nearby].label}
+          <kbd>E</kbd><span>{nearby === 'workstation' ? 'SIT' : nearby === 'bed' ? 'SLEEP' : 'INSPECT'}</span>{nearby === 'workstation' ? 'OPEN DESKTOP' : roomObjectById[nearby].label}
         </button>
       )}
 
+      {selected === 'bed' && <button className="room-world-prompt" onClick={() => setSelected(null)}><kbd>ESC</kbd><span>WAKE UP</span>MOVE TO GET OUT OF BED</button>}
       <aside className={`room-world-detail ${active ? 'is-open' : ''}`} aria-live="polite">
         {active && (
           <>
