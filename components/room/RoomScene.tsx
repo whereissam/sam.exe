@@ -16,6 +16,10 @@ import RoomDesktop from './RoomDesktop';
 
 type Vec3 = [number, number, number];
 const SPAWN: Point = { x: 0, z: 2.2 };
+// Only enlarge Sam in this room; furniture and island characters retain their sizes.
+const PLAYER_SCALE = 1.65;
+// Pillow top = 1.09. Head back = -0.33 in the model, scaled by 0.52 * PLAYER_SCALE.
+const PILLOW_HEAD_LIFT = (1.09 - 1.0) / (0.52 * PLAYER_SCALE) + 0.33;
 const ink = '#3b3324';
 const cream = '#f1dfb2';
 const teal = '#6d9d99';
@@ -44,11 +48,11 @@ function Inspectable({ id, selected, onGo, labelY = 2.7, children }: { id: RoomO
       {children}
       {active && (
         <>
-          <mesh position={[0, 0.035, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh position={[roomObjectById[id].approach[0], 0.08, roomObjectById[id].approach[1]]} rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.58, 0.63, 36]} />
             <meshBasicMaterial color={gold} transparent opacity={0.9} />
           </mesh>
-          <Html center position={[0, labelY, 0]} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
+          <Html center position={[roomObjectById[id].approach[0], labelY, roomObjectById[id].approach[1]]} zIndexRange={[10, 0]} style={{ pointerEvents: 'none' }}>
             <span className="room-object-label"><b>{roomObjectById[id].number}</b>{roomObjectById[id].label}</span>
           </Html>
         </>
@@ -132,10 +136,10 @@ function Workstation(props: Pick<ObjectProps, 'selected' | 'onGo' | 'simulation'
         </group>
         <MechanicalKeyboard />
         <mesh position={[1.72, 1.48, 0.35]} castShadow><cylinderGeometry args={[0.18, 0.16, 0.38, 10]} /><meshStandardMaterial color={rust} /></mesh>
-        <group position={[0.2, 0, 1.12]} scale={0.72}>
-          <mesh position={[0, 0.78, 0]} castShadow><cylinderGeometry args={[0.52, 0.52, 0.12, 16]} /><meshStandardMaterial color="#725f4e" /></mesh>
-          <B at={[0, 1.25, 0.28]} size={[1.05, 1.05, 0.13]} color="#5f5144" />
-          <B at={[0, 0.4, 0]} size={[0.12, 0.78, 0.12]} color={ink} />
+        <group position={[-0.55, 0, 1.25]}>
+          <B at={[0, 0.72, 0]} size={[0.95, 0.16, 0.9]} color="#526e68" />
+          <B at={[0, 1.24, 0.39]} size={[0.95, 0.95, 0.14]} color="#526e68" />
+          {[-0.35, 0.35].flatMap((x) => [-0.32, 0.32].map((z) => <B key={`${x}-${z}`} at={[x, 0.32, z]} size={[0.09, 0.64, 0.09]} color={ink} />))}
         </group>
       </group>
     </Inspectable>
@@ -147,7 +151,7 @@ function AICore({ selected, onGo, simulation }: ObjectProps) {
   useFrame((_, dt) => { if (core.current) core.current.rotation.y += dt * (simulation ? 0.9 : 0.22); });
   return (
     <Inspectable id="ai-core" selected={selected} onGo={onGo} labelY={2.75}>
-      <group position={[-0.65, 0, -4.75]}>
+      <group position={[-0.85, 1.32, -4.95]} scale={0.42}>
         <mesh position={[0, 0.24, 0]} castShadow receiveShadow><cylinderGeometry args={[0.82, 0.98, 0.45, 6]} /><meshStandardMaterial color="#d6bb7b" /></mesh>
         <group ref={core} position={[0, 1.25, 0]} rotation={[0.3, 0.4, 0.2]}>
           <mesh castShadow><octahedronGeometry args={[0.54, 0]} /><meshStandardMaterial color={simulation ? '#b9f0d5' : gold} emissive={simulation ? '#66d4ae' : gold} emissiveIntensity={simulation ? 1.4 : 0.32} flatShading /></mesh>
@@ -180,10 +184,9 @@ function RobotArm({ selected, onGo, simulation }: ObjectProps) {
   useFrame(({ clock }) => { if (arm.current) arm.current.rotation.z = simulation ? Math.sin(clock.elapsedTime * 0.7) * 0.28 - 0.25 : -0.25; });
   return (
     <Inspectable id="robot-arm" selected={selected} onGo={onGo} labelY={3.1}>
-      <group position={[2.15, 0, -4.65]}>
-        <B at={[0, 0.72, 0]} size={[2.65, 1.35, 1.35]} color="#719b96" />
-        <mesh position={[0, 1.46, 0]} castShadow><cylinderGeometry args={[0.48, 0.62, 0.22, 12]} /><meshStandardMaterial color={cream} /></mesh>
-        <group position={[0, 1.54, 0]}>
+      <group position={[0.7, 1.32, -4.95]} scale={0.48}>
+        <mesh position={[0, 0.11, 0]} castShadow><cylinderGeometry args={[0.48, 0.62, 0.22, 12]} /><meshStandardMaterial color={cream} /></mesh>
+        <group position={[0, 0.2, 0]}>
           <group ref={arm} rotation={[0, 0, -0.25]}>
             <B at={[0, 0.5, 0]} size={[0.3, 1.02, 0.32]} color={rust} />
             <mesh position={[0, 1.03, 0]} castShadow><sphereGeometry args={[0.23, 12, 8]} /><meshStandardMaterial color={cream} /></mesh>
@@ -193,17 +196,16 @@ function RobotArm({ selected, onGo, simulation }: ObjectProps) {
             </group>
           </group>
         </group>
-        <B at={[0.72, 1.48, 0.28]} size={[0.62, 0.05, 0.42]} color="#d8e3d7" />
       </group>
     </Inspectable>
   );
 }
 
 function G1Robot({ selected, onGo, simulation }: ObjectProps) {
-  const path = useMemo(() => [[4.75, 0.08, -4.2], [5.55, 0.08, -3.6], [4.75, 0.08, -2.85], [5.55, 0.08, -2.15], [4.95, 0.08, -1.35]] as Vec3[], []);
+  const path = useMemo(() => [[-0.5, 0.08, -2.8], [0.4, 0.08, -2.8], [1.2, 0.08, -2.1], [2, 0.08, -2.1]] as Vec3[], []);
   return (
     <Inspectable id="robot" selected={selected} onGo={onGo} labelY={3.55}>
-      <group position={[5.05, 0, -4.15]}>
+      <group position={[2.1, 1.32, -4.95]} scale={0.48}>
         <mesh position={[0, 0.18, 0]} receiveShadow><cylinderGeometry args={[1.05, 1.18, 0.34, 6]} /><meshStandardMaterial color="#d8bd7c" /></mesh>
         <B at={[0, 1.82, 0]} size={[0.78, 1.05, 0.52]} color="#e7dfc6" />
         <B at={[0, 2.57, 0]} size={[0.88, 0.58, 0.62]} color="#e9e2ce" />
@@ -220,14 +222,17 @@ function Learning({ selected, onGo }: ObjectProps) {
   return (
     <Inspectable id="learning" selected={selected} onGo={onGo} labelY={3.6}>
       <group position={[-7.5, 0, 0.1]}>
-        <B at={[0, 1.75, 0]} size={[0.7, 3.5, 3.2]} color="#699791" />
-        {[0.58, 1.35, 2.12, 2.89].map((y) => <B key={y} at={[0.4, y, 0]} size={[0.12, 0.12, 2.85]} color={cream} />)}
-        {[0.8, 1.12, 1.46, 1.82, 2.18, 2.55].map((z, i) => <B key={z} at={[0.49, 0.93 + (i % 3) * 0.77, z - 1.7]} size={[0.2, 0.58, 0.24]} color={[rust, gold, '#ded2aa', ink][i % 4]} rotation={[0, 0, i % 2 ? -0.08 : 0]} />)}
-        <group position={[1.05, 0, 1.4]} rotation={[0, -0.2, 0]}>
-          <B at={[0, 0.52, 0]} size={[1.45, 0.12, 0.85]} color="#c79668" />
-          <B at={[0, 0.65, 0]} size={[1.1, 0.04, 0.68]} color="#f4e9c9" />
-          {[0.15, 0.36].map((z) => <B key={z} at={[-0.2, 0.69, z - 0.3]} size={[0.58, 0.025, 0.025]} color={teal} />)}
-        </group>
+        <B at={[-0.22, 1.7, 0]} size={[0.1, 3.4, 2.8]} color="#8d7157" />
+        {[-1.4, 1.4].map((z) => <B key={z} at={[0.18, 1.7, z]} size={[0.9, 3.4, 0.14]} color="#b28c64" />)}
+        {[0.15, 0.95, 1.75, 2.55, 3.35].map((y) => <B key={y} at={[0.18, y, 0]} size={[0.9, 0.12, 2.8]} color="#c39e72" />)}
+        {[0.95, 1.75, 2.55].flatMap((y, row) => Array.from({ length: 9 }, (_, i) => {
+          const height = 0.44 + ((i + row) % 3) * 0.08;
+          return <group key={`${row}-${i}`}>
+            <B at={[0.24, y + 0.06 + height / 2, -1.15 + i * 0.25]} size={[0.48, height, 0.18]} color={[rust, '#d6bc7e', '#ded2aa', '#526e68'][ (i + row) % 4]} />
+            <B at={[0.485, y + 0.2, -1.15 + i * 0.25]} size={[0.012, 0.035, 0.13]} color={cream} />
+          </group>;
+        }))}
+        {[-0.65, 0.65].map((z) => <B key={z} at={[0.22, 0.5, z]} size={[0.65, 0.52, 1.03]} color="#a4b5a5" />)}
       </group>
     </Inspectable>
   );
@@ -242,8 +247,11 @@ function TravelCorner({ selected, onGo }: ObjectProps) {
         <mesh position={[0, 1.12, -0.3]} castShadow><sphereGeometry args={[0.62, 16, 10]} /><meshStandardMaterial color={paleTeal} flatShading /></mesh>
         <mesh position={[0, 1.12, -0.3]} rotation={[0, 0, 0.4]}><torusGeometry args={[0.69, 0.035, 6, 32]} /><meshStandardMaterial color={ink} /></mesh>
         <B at={[0, 0.38, -0.3]} size={[0.65, 0.12, 0.65]} color="#b88a58" />
+        <B at={[0, 0.19, -0.3]} size={[0.1, 0.38, 0.1]} color={ink} />
+        <B at={[0, 0.06, -0.3]} size={[0.6, 0.12, 0.6]} color="#b88a58" />
         <B at={[0.62, 0.65, 0.72]} size={[0.82, 1.28, 0.48]} color={rust} />
         <B at={[0.62, 1.34, 0.72]} size={[0.38, 0.1, 0.16]} color={ink} />
+        {[-0.22, 0.22].map((x) => <B key={x} at={[0.62 + x, 0.65, 0.965]} size={[0.07, 1.22, 0.035]} color="#e4bc87" />)}
       </group>
     </Inspectable>
   );
@@ -252,7 +260,7 @@ function TravelCorner({ selected, onGo }: ObjectProps) {
 function Relic({ selected, onGo, simulation }: ObjectProps) {
   return (
     <Inspectable id="relic" selected={selected} onGo={onGo} labelY={2.15}>
-      <group position={[0.75, 0, 4.85]}>
+      <group position={[3.25, 0.98, -3.6]} scale={0.3}>
         <mesh position={[0, 0.44, 0]} castShadow><cylinderGeometry args={[0.62, 0.78, 0.82, 6]} /><meshStandardMaterial color="#c3a56d" /></mesh>
         <mesh position={[0, 1.18, 0]} rotation={[0, 0, Math.PI / 4]} castShadow><octahedronGeometry args={[0.43, 0]} /><meshStandardMaterial color="#8778a5" emissive="#8778a5" emissiveIntensity={simulation ? 0.45 : 0.05} /></mesh>
         <mesh position={[0, 1.18, 0]}><torusGeometry args={[0.65, 0.025, 6, 32]} /><meshBasicMaterial color={cream} transparent opacity={0.6} /></mesh>
@@ -267,18 +275,41 @@ function Plant({ position, scale = 1, reduced }: { position: Vec3; scale?: numbe
   return <group position={position} scale={scale}><mesh position={[0, 0.38, 0]} castShadow><cylinderGeometry args={[0.43, 0.34, 0.72, 10]} /><meshStandardMaterial color="#ad7554" /></mesh><group ref={leaves} position={[0, 0.72, 0]}>{Array.from({ length: 8 }, (_, i) => { const a = i * Math.PI / 4; return <mesh key={i} position={[Math.cos(a) * 0.18, 0.48 + (i % 3) * 0.18, Math.sin(a) * 0.18]} rotation={[0, -a, Math.cos(a) * 0.5]} scale={[0.75, 2.5, 0.35]} castShadow><icosahedronGeometry args={[0.24, 1]} /><meshStandardMaterial color={i % 2 ? '#6f9c67' : '#8bad70'} flatShading /></mesh>; })}</group></group>;
 }
 
-function LivingDetails({ reduced }: { reduced: boolean }) {
+function LivingDetails({ reduced, selected, onGo }: { reduced: boolean } & Pick<ObjectProps, 'selected' | 'onGo'>) {
+  const sleeping = selected === 'bed';
   return (
     <>
-      <group position={[5.6, 0, 4.3]} rotation={[0, -0.18, 0]}>
-        <B at={[0, 0.55, 0]} size={[2.6, 0.72, 1.28]} color="#87a9a2" />
-        <B at={[0, 1.12, 0.53]} size={[2.65, 1.05, 0.24]} color="#73938e" />
-        <B at={[-0.72, 1.03, -0.15]} size={[0.72, 0.42, 0.72]} color="#e5c875" />
+      {/* A real bed: headboard against the wall, mattress, pillows and folded duvet. */}
+      <Inspectable id="bed" selected={selected} onGo={onGo} labelY={2.3}>
+      <group position={[5.5, 0, -2.9]}>
+        {[-1.25, 1.25].flatMap((x) => [-2.2, 2.2].map((z) => <B key={`${x}-${z}`} at={[x, 0.22, z]} size={[0.16, 0.44, 0.16]} color="#8d7157" />))}
+        <B at={[0, 0.42, 0]} size={[3.05, 0.3, 4.85]} color="#b28c64" />
+        <B at={[0, 1.05, -2.4]} size={[3.12, 1.65, 0.18]} color="#b28c64" />
+        <B at={[0, 0.72, 0]} size={[2.9, 0.34, 4.6]} color="#f2ebd8" />
+        <B at={[0, sleeping ? 1.18 : 0.92, 0.6]} size={[2.94, sleeping ? 0.48 : 0.18, 3.35]} color="#789b91" />
+        <B at={[0, sleeping ? 1.4 : 1.03, -0.93]} size={[2.95, 0.14, 0.38]} color="#a6bfb0" />
+        {[-0.73, 0.73].map((x) => <B key={x} at={[x, 0.98, -1.65]} size={[1.18, 0.22, 0.77]} color="#fff0d7" rotation={[0, x * 0.06, 0]} />)}
+        <B at={[0, sleeping ? 1.43 : 1.03, 1.53]} size={[2.98, 0.08, 0.85]} color="#d3ad72" />
       </group>
-      <Plant position={[3.55, 0, 4.9]} reduced={reduced} />
-      <group position={[3.1, 0, 2.55]}><mesh position={[0, 0.28, 0]} castShadow><cylinderGeometry args={[0.62, 0.72, 0.48, 10]} /><meshStandardMaterial color="#c88663" /></mesh><B at={[0, 0.58, 0]} size={[1.3, 0.12, 0.9]} color="#dfbd80" /></group>
-      <B at={[2.8, 0.045, 1.05]} size={[1.25, 0.035, 0.035]} color={ink} rotation={[0, 0.42, 0]} />
-      <B at={[3.25, 0.045, 1.35]} size={[0.68, 0.035, 0.035]} color={rust} rotation={[0, -0.32, 0]} />
+      </Inspectable>
+      <group position={[3.25, 0, -3.6]}>
+        <B at={[0, 0.5, 0]} size={[1.05, 0.9, 1.05]} color="#b28c64" />
+        <B at={[0, 0.97, 0]} size={[1.13, 0.08, 1.13]} color="#c9a677" />
+        <B at={[0, 0.61, 0.535]} size={[0.85, 0.42, 0.04]} color="#c9a677" />
+        <B at={[0, 0.61, 0.57]} size={[0.22, 0.05, 0.05]} color={ink} />
+      </group>
+      {/* Project models live together on a conventional storage cabinet. */}
+      <group position={[0.65, 0, -4.95]}>
+        <B at={[0, 0.68, 0]} size={[4.4, 1.2, 1.2]} color="#789b91" />
+        <B at={[0, 1.31, 0]} size={[4.52, 0.1, 1.3]} color="#c9a677" />
+        {[-1.43, 0, 1.43].map((x) => <group key={x}>
+          <B at={[x, 0.7, 0.615]} size={[1.35, 1.03, 0.04]} color="#91aea0" />
+          <B at={[x, 1.03, 0.65]} size={[0.28, 0.05, 0.05]} color={ink} />
+        </group>)}
+      </group>
+      <B at={[0.15, 0.045, 1.25]} size={[6.1, 0.035, 4.4]} color="#c1baa0" />
+      {[-0.6, -0.45, 2.95, 3.1].map((z) => <B key={z} at={[0.15, 0.065, z]} size={[5.85, 0.009, 0.045]} color="#e9dfc4" />)}
+      <Plant position={[6.75, 0, 3.5]} reduced={reduced} />
     </>
   );
 }
@@ -286,8 +317,10 @@ function LivingDetails({ reduced }: { reduced: boolean }) {
 type ObjectProps = { selected: RoomObjectId | null; onGo: (id: RoomObjectId) => void; simulation: boolean };
 
 const obstacles = [
-  [-7.8, -2.3, -5.8, -4.0], [-1.55, 0.2, -5.65, -4.0], [0.7, 3.55, -5.7, -3.65], [4.1, 6.4, -5.55, -3.0],
-  [-7.8, -6.55, -1.8, 1.95], [-7.7, -5.35, 3.05, 5.45], [-0.15, 1.65, 4.3, 5.55], [4.05, 7.25, 3.3, 5.55],
+  [-6.65, -2.45, -5.45, -4.05], [-5.6, -4.6, -4.0, -3.05],
+  [-1.61, 2.91, -5.6, -4.3], [3.94, 7.06, -5.4, -0.47],
+  [2.68, 3.82, -4.17, -3.03], [-7.8, -6.85, -1.4, 1.6],
+  [-7.1, -5.25, 3.3, 5.4], [6.3, 7.2, 3.05, 3.95],
 ] as const;
 
 function walkable(point: Point) {
@@ -305,13 +338,41 @@ function advance(position: Point, dx: number, dz: number) {
   return walkable(zOnly) ? zOnly : position;
 }
 
-function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, onNearby, pending, onArrive }: { keys: React.RefObject<Set<string>>; target: Point | null; setTarget: (point: Point | null) => void; reset: number; reduced: boolean; desktopMode: boolean; onNearby: (id: RoomObjectId | null) => void; pending: RoomObjectId | null; onArrive: (id: RoomObjectId) => void }) {
+function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, sleeping, onWake, onNearby, pending, onArrive }: { keys: React.RefObject<Set<string>>; target: Point | null; setTarget: (point: Point | null) => void; reset: number; reduced: boolean; desktopMode: boolean; sleeping: boolean; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; pending: RoomObjectId | null; onArrive: (id: RoomObjectId) => void }) {
   const actor = useRef<THREE.Group>(null);
   const position = useRef<Point>({ ...SPAWN });
   const forward = useRef(new THREE.Vector3());
   const previousNear = useRef<RoomObjectId | null>(null);
   const motion = useRef<Motion>({ walking: false, phase: 0, gesture: null, time: 0 });
-  useEffect(() => { position.current = { ...SPAWN }; if (actor.current) actor.current.position.set(SPAWN.x, 0.12, SPAWN.z); setTarget(null); }, [reset, setTarget]);
+  const wasSleeping = useRef(false);
+  useEffect(() => {
+    position.current = { ...SPAWN };
+    wasSleeping.current = false;
+    if (actor.current) {
+      actor.current.position.set(SPAWN.x, 0.12, SPAWN.z);
+      actor.current.rotation.set(0, 0, 0);
+    }
+    setTarget(null);
+  }, [reset, setTarget]);
+  useEffect(() => {
+    if (!actor.current) return;
+    if (sleeping) {
+      motion.current.walking = false;
+      motion.current.seated = false;
+      // Lie face-up along the mattress, independently of the island's curled resting pose.
+      wasSleeping.current = true;
+      motion.current.routine = undefined;
+      actor.current.position.set(4.77, 1.0, -2.85);
+      actor.current.rotation.set(-Math.PI / 2, 0, 0);
+      setTarget(null);
+    } else if (wasSleeping.current) {
+      wasSleeping.current = false;
+      motion.current.routine = undefined;
+      position.current = { x: 5.5, z: 0.3 };
+      actor.current.position.set(5.5, 0.12, 0.3);
+      actor.current.rotation.set(0, 0, 0);
+    }
+  }, [sleeping, setTarget]);
   useEffect(() => {
     if (!actor.current) return;
     if (desktopMode) {
@@ -334,6 +395,7 @@ function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, onNe
     const k = keys.current;
     const x = Number(k.has('d') || k.has('arrowright')) - Number(k.has('a') || k.has('arrowleft'));
     const z = Number(k.has('s') || k.has('arrowdown')) - Number(k.has('w') || k.has('arrowup'));
+    if (sleeping) { if (x || z || target) onWake(); return; }
     let dx = 0, dz = 0;
     if (x || z) {
       if (target) setTarget(null);
@@ -366,8 +428,8 @@ function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, onNe
   });
   return (
     <group ref={actor} position={[SPAWN.x, 0.12, SPAWN.z]} visible={!desktopMode}>
-      <Suspense fallback={<TravellerPlaceholder character="sam" />}><TravellerAvatar character="sam" motion={motion} reduced={reduced} /></Suspense>
-      <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}><torusGeometry args={[0.38, 0.025, 6, 32]} /><meshBasicMaterial color="#f4c469" /></mesh>
+      <group scale={PLAYER_SCALE}><Suspense fallback={<TravellerPlaceholder character="sam" />}><TravellerAvatar character="sam" motion={motion} reduced={reduced} restingHeadLift={sleeping ? PILLOW_HEAD_LIFT : 0} /></Suspense></group>
+      {sleeping ? <Html center position={[0, 1.8, 0.8]} style={{ pointerEvents: 'none' }}><span className="room-object-label">Z z z</span></Html> : <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}><torusGeometry args={[0.5, 0.025, 6, 32]} /><meshBasicMaterial color="#f4c469" /></mesh>}
     </group>
   );
 }
@@ -396,7 +458,7 @@ function RoomShell({ simulation, selected, onGo, reduced, desktopMode, onExitDes
       <Learning selected={selected} onGo={onGo} simulation={simulation} />
       <TravelCorner selected={selected} onGo={onGo} simulation={simulation} />
       <Relic selected={selected} onGo={onGo} simulation={simulation} />
-      <LivingDetails reduced={reduced} />
+      <LivingDetails reduced={reduced} selected={selected} onGo={onGo} />
       <ContactShadows position={[0, 0.04, 0]} opacity={0.28} scale={18} blur={2.8} far={8} />
     </group>
   );
@@ -434,7 +496,7 @@ function Camera({ reset, focusDesk }: { reset: number; focusDesk: boolean }) {
   return <OrbitControls ref={controls} makeDefault target={[0, 0.8, 0]} minPolarAngle={0.56} maxPolarAngle={1.18} minZoom={18} maxZoom={580} enablePan={false} enabled={!focusDesk} dampingFactor={0.08} />;
 }
 
-export default function RoomScene({ keys, selected, onSelect, onNearby, simulation, desktopMode, onExitDesktop, reset, reducedMotion }: { keys: React.RefObject<Set<string>>; selected: RoomObjectId | null; onSelect: (id: RoomObjectId) => void; onNearby: (id: RoomObjectId | null) => void; simulation: boolean; desktopMode: boolean; onExitDesktop: () => void; reset: number; reducedMotion: boolean; moving: boolean }) {
+export default function RoomScene({ keys, selected, onSelect, onWake, onNearby, simulation, desktopMode, onExitDesktop, reset, reducedMotion }: { keys: React.RefObject<Set<string>>; selected: RoomObjectId | null; onSelect: (id: RoomObjectId) => void; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; simulation: boolean; desktopMode: boolean; onExitDesktop: () => void; reset: number; reducedMotion: boolean; moving: boolean }) {
   const [target, setTargetState] = useState<Point | null>(null);
   const [pending, setPending] = useState<RoomObjectId | null>(null);
   const setTarget = useCallback((point: Point | null) => setTargetState(point), []);
@@ -447,7 +509,7 @@ export default function RoomScene({ keys, selected, onSelect, onNearby, simulati
       <hemisphereLight args={[simulation ? '#b7f5d5' : '#fff0c9', '#7c6846', simulation ? 0.8 : 1.5]} />
       <directionalLight position={[-7, 12, 9]} color={simulation ? '#c9f4dd' : '#ffe0a8'} intensity={simulation ? 1.35 : 2.4} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-11} shadow-camera-right={11} shadow-camera-top={10} shadow-camera-bottom={-10} shadow-normalBias={0.035} />
       <RoomShell selected={selected} onGo={goTo} simulation={simulation} reduced={reducedMotion} desktopMode={desktopMode} onExitDesktop={onExitDesktop} onWalk={(point) => { setPending(null); setTarget(point); }} />
-      <RoomPlayer keys={keys} target={target} setTarget={setTarget} reset={reset} reduced={reducedMotion} desktopMode={desktopMode} onNearby={onNearby} pending={pending} onArrive={(id) => { setPending(null); onSelect(id); }} />
+      <RoomPlayer keys={keys} target={target} setTarget={setTarget} reset={reset} reduced={reducedMotion} desktopMode={desktopMode} sleeping={selected === 'bed'} onWake={onWake} onNearby={onNearby} pending={pending} onArrive={(id) => { setPending(null); onSelect(id); }} />
       {target && <mesh position={[target.x, 0.035, target.z]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.18, 0.23, 32]} /><meshBasicMaterial color={gold} /></mesh>}
       <Camera reset={reset} focusDesk={desktopMode} />
     </Canvas>

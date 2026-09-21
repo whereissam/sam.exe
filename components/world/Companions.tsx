@@ -38,19 +38,22 @@ function Avatar({
   character,
   motion,
   reduced,
+  restingHeadLift = 0,
 }: {
   character: Character;
   motion: RefObject<Motion>;
   reduced: boolean;
+  restingHeadLift?: number;
 }) {
   const { scene } = useGLTF(manifest[character], false, false);
-  const { object, joints } = useMemo(() => {
+  const { object, joints, headDepth } = useMemo(() => {
     const object = scene.clone(true);
     object.traverse((n) => {
       if ((n as THREE.Mesh).isMesh) n.castShadow = true;
     });
     return {
       object,
+      headDepth: object.getObjectByName('Head')?.position.z ?? 0,
       joints: Object.fromEntries(
         ['ArmL', 'ArmR', 'LegL', 'LegR', 'Head'].map((name) => [
           name,
@@ -61,6 +64,8 @@ function Avatar({
   }, [scene]);
   useFrame(({ clock }) => {
     const m = motion.current;
+    // Local +Z faces upward when the room avatar is lying on its back.
+    if (joints.Head) joints.Head.position.z = headDepth + restingHeadLift;
     const swing = m.walking
       ? Math.sin(m.phase * 10) * (reduced ? 0.18 : 0.48)
       : 0;
