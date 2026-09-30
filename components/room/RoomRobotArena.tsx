@@ -2,7 +2,7 @@
 
 /* oxlint-disable react/react-compiler -- Animation updates Three.js objects inside frame callbacks. */
 import { useEffect, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, OrbitControls } from '@react-three/drei';
 import { X } from 'lucide-react';
 import * as THREE from 'three';
@@ -157,6 +157,15 @@ function Fighter({ side, color, time }: { side: -1 | 1; color: string; time: Rea
 
 function Arena({ playing, speed, reduced }: { playing: boolean; speed: number; reduced: boolean }) {
   const time = useRef(0);
+  const { camera, size } = useThree();
+  useEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+    const portrait = size.width / size.height < 0.8;
+    camera.fov = portrait ? 60 : 43;
+    camera.position.set(...(portrait ? [6, 5, 8] as const : [4.5, 3.4, 6.2] as const));
+    camera.lookAt(0, 0.9, 0);
+    camera.updateProjectionMatrix();
+  }, [camera, size.width, size.height]);
   useFrame((_, dt) => { if (playing) time.current += Math.min(dt, 0.05) * speed; });
   return <>
     <color attach="background" args={['#c4d0bb']} />
@@ -173,7 +182,7 @@ function Arena({ playing, speed, reduced }: { playing: boolean; speed: number; r
     <Fighter side={-1} color="#b96848" time={time} /><Fighter side={1} color="#527e77" time={time} />
     {!reduced && <ImpactBursts time={time} />}
     <ContactShadows position={[0, 0.03, 0]} scale={7} opacity={0.3} blur={2} far={3} />
-    <OrbitControls target={[0, 0.9, 0]} enablePan={false} minDistance={5} maxDistance={12} minPolarAngle={0.45} maxPolarAngle={1.45} />
+    <OrbitControls target={[0, 0.9, 0]} enablePan={false} minDistance={5} maxDistance={16} minPolarAngle={0.45} maxPolarAngle={1.45} />
   </>;
 }
 
