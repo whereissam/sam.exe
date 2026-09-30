@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { roomObjectById, type RoomObjectId } from '@/components/room/room-data';
 
 const RoomScene = lazy(() => import('@/components/room/RoomScene'));
+const RoomBookshelf = lazy(() => import('@/components/room/RoomBookshelf'));
+const RoomRobotArena = lazy(() => import('@/components/room/RoomRobotArena'));
 
 export default function RoomPage() {
   const keys = useRef(new Set<string>());
@@ -16,7 +18,7 @@ export default function RoomPage() {
   const [reset, setReset] = useState(0);
   const [moving, setMoving] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const active = selected && selected !== 'bed' ? roomObjectById[selected] : null;
+  const active = selected && selected !== 'bed' && selected !== 'learning' && selected !== 'robot' ? roomObjectById[selected] : null;
 
   const inspect = useCallback((id: RoomObjectId) => {
     keys.current.clear();
@@ -26,6 +28,11 @@ export default function RoomPage() {
       setDesktopMode(true);
     } else setSelected(id);
   }, []);
+
+  const approach = useCallback((id: RoomObjectId | null) => {
+    setNearby(id);
+    if (id === 'learning' || id === 'robot') inspect(id);
+  }, [inspect]);
 
   useEffect(() => {
     const media = matchMedia('(prefers-reduced-motion: reduce)');
@@ -46,6 +53,7 @@ export default function RoomPage() {
         else setSelected(null);
         return;
       }
+      if (selected === 'learning' || selected === 'robot') return;
       if (event.key.toLowerCase() === 'e' && nearby) {
         inspect(nearby);
         return;
@@ -72,7 +80,7 @@ export default function RoomPage() {
       window.removeEventListener('keyup', up);
       window.removeEventListener('blur', clear);
     };
-  }, [nearby, desktopMode, inspect]);
+  }, [nearby, desktopMode, selected, inspect]);
 
   function steer(key: string, pressed: boolean) {
     if (pressed) keys.current.add(key);
@@ -84,7 +92,7 @@ export default function RoomPage() {
     <main className={`room-world ${simulation ? 'is-simulating' : ''}`}>
       <section className="room-world-canvas" aria-label="Sam's interactive 3D workshop. Walk with WASD or the arrow keys, tap the floor to move, and inspect nearby objects.">
         <Suspense fallback={<div className="room-world-loading">OPENING SAM’S ROOM…</div>}>
-          <RoomScene keys={keys} selected={selected} onSelect={inspect} onWake={() => setSelected(null)} onNearby={setNearby} simulation={simulation} desktopMode={desktopMode} onExitDesktop={() => setDesktopMode(false)} reset={reset} reducedMotion={reducedMotion} moving={moving} />
+          <RoomScene keys={keys} selected={selected} onSelect={inspect} onWake={() => setSelected(null)} onNearby={approach} simulation={simulation} desktopMode={desktopMode} onExitDesktop={() => setDesktopMode(false)} reset={reset} reducedMotion={reducedMotion} moving={moving} />
         </Suspense>
       </section>
 
@@ -101,7 +109,7 @@ export default function RoomPage() {
 
       {nearby && !selected && !desktopMode && (
         <button className="room-world-prompt" onClick={() => inspect(nearby)}>
-          <kbd>E</kbd><span>{nearby === 'workstation' ? 'SIT' : nearby === 'bed' ? 'SLEEP' : 'INSPECT'}</span>{nearby === 'workstation' ? 'OPEN DESKTOP' : roomObjectById[nearby].label}
+          <kbd>E</kbd><span>{nearby === 'workstation' ? 'SIT' : nearby === 'bed' ? 'SLEEP' : nearby === 'learning' ? 'BROWSE' : 'INSPECT'}</span>{nearby === 'workstation' ? 'OPEN DESKTOP' : roomObjectById[nearby].label}
         </button>
       )}
 
@@ -117,6 +125,9 @@ export default function RoomPage() {
           </>
         )}
       </aside>
+
+      {selected === 'learning' && <Suspense fallback={<div className="room-library-backdrop room-world-loading">OPENING THE BOOKSHELF…</div>}><RoomBookshelf onClose={() => setSelected(null)} reducedMotion={reducedMotion} /></Suspense>}
+      {selected === 'robot' && <Suspense fallback={<div className="room-library-backdrop room-world-loading">OPENING THE ROBOT ARENA…</div>}><RoomRobotArena onClose={() => setSelected(null)} reducedMotion={reducedMotion} /></Suspense>}
 
       <div className="room-world-controls">
         <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> WALK</span>

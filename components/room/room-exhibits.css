@@ -1,0 +1,59 @@
+
+/* A paper-and-cloth reading shelf, opened from the room. */
+.room-shelf-stage { position: relative; flex: 1; min-height: 180px; touch-action: none; cursor: grab; }
+.room-shelf-stage:active { cursor: grabbing; }
+.room-shelf-instructions { position: absolute; bottom: 18px; left: 0; right: 0; text-align: center; color: #3b493a; font-size: 9px; letter-spacing: 1.5px; pointer-events: none; }
+.room-shelf-caption { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 20px 32px 24px; border-top: 1px solid #3b33242b; }
+.room-shelf-copy { min-width: 0; }
+.room-shelf-copy > span { color: #925538; font-size: 8px; letter-spacing: 1.6px; }
+.room-shelf-copy h2 { margin: 7px 0 6px; font-family: Georgia, serif; font-size: 24px; font-weight: 400; line-height: 1.2; }
+.room-shelf-copy p { margin: 0 0 8px; font-size: 11px; color: #675c45; }
+.room-shelf-copy a { font-size: 8px; letter-spacing: 1.2px; color: #925538; }
+.room-shelf-copy a:hover { text-decoration: underline; }
+.room-shelf-navigation { display: flex; align-items: center; flex-shrink: 0; gap: 12px; }
+.room-shelf-navigation > span { font-size: 10px; letter-spacing: 1px; }
+.room-shelf-navigation button { display: grid; place-items: center; width: 38px; height: 38px; background: #e5dcc0; border: 1px solid #3b33242b; }
+.room-shelf-navigation button:hover:not(:disabled) { background: #cdbf9d; }
+.room-shelf-navigation button:disabled { opacity: .3; cursor: default; }
+@media (max-width: 650px) {
+  .room-shelf-caption { align-items: flex-start; flex-direction: column; gap: 15px; padding: 16px 20px; }
+  .room-shelf-copy h2 { font-size: 20px; }
+  .room-shelf-navigation { align-self: stretch; justify-content: space-between; }
+  .room-shelf-instructions { font-size: 7px; letter-spacing: .7px; }
+}
+.room-arena { margin: auto; padding: 0; border: 0; max-width: none; max-height: none; width: min(1020px, calc(100% - 48px)); height: min(800px, calc(100svh - 48px)); display: flex; flex-direction: column; color: #3b3324; background: #f1e8cf; box-shadow: 0 24px 100px #182c3540; }
+.room-arena-stage { position: relative; flex: 1; min-height: 0; }
+.room-arena-match { position: absolute; inset: 18px 24px auto; display: flex; align-items: center; justify-content: space-between; pointer-events: none; font-size: 10px; letter-spacing: 1.5px; }
+.room-arena-match > span { display: flex; gap: 8px; align-items: center; }
+.room-arena-match i { width: 7px; height: 7px; background: #b96848; }
+.room-arena-match > span:last-child i { background: #527e77; }
+.room-arena-match small { font-size: 8px; }
+.room-arena-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 18px 24px 10px; border-top: 1px solid #3b33242b; }
+.room-arena-controls button { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #e5dcc0; border: 1px solid #3b33242b; font-size: 9px; letter-spacing: 1px; cursor: pointer; }
+.room-arena-controls button:hover { background: #d5c5a0; }
+.room-arena-controls button:focus-visible { outline: 2px solid #a55236; }
+.room-arena-controls > span { margin-left: auto; font-size: 8px; letter-spacing: 1px; color: #675c45; }
+.room-arena-note { padding: 0 24px 16px; margin: 0; font-size: 11px; color: #675c45; }
+@media (max-width: 650px) {
+  .room-arena { width: calc(100% - 20px); height: calc(100svh - 20px); }
+  .room-arena-controls { padding: 12px; gap: 8px; }
+  .room-arena-controls button { padding: 10px; font-size: 8px; }
+  .room-arena-controls > span { width: 100%; margin-left: 0; }
+  .room-arena-match { inset: 16px 16px auto; font-size: 8px; }
+}
+.room-library-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px; background: #293e35b8; }
+.room-library { margin: auto; padding: 0; border: 0; max-width: none; max-height: none; width: min(960px, calc(100% - 48px)); height: min(760px, calc(100svh - 48px)); display: flex; flex-direction: column; color: #3b3324; background: #f1e8cf; box-shadow: 0 24px 100px #182c3540; }
+.room-library::backdrop, .room-arena::backdrop { background: #293e35b8; }
+.room-library button { cursor: pointer; }
+.room-library button:focus-visible, .room-library-list:focus-visible { outline: 2px solid #a55236; outline-offset: -3px; }
+.room-library-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 24px; border-bottom: 1px solid #3b33242b; }
+.room-library-header span, .room-library-list-label, .room-library-book-note > span, .room-library-rotate, .room-library-pagination { font-size: 10px; letter-spacing: 1.7px; }
+.room-library-header span { color: #976246; }
+.room-library-header h1 { margin: 3px 0 0; font-family: Georgia, serif; font-size: clamp(22px, 2.4vw, 28px); line-height: 1.15; font-weight: 400; letter-spacing: -.6px; }
+.room-library-header button { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid #3b332436; background: transparent; }
+.room-library-header button:hover { background: #dfd2b4; }
+@media (max-width: 650px) {
+  .room-library-backdrop { padding: 10px; }
+  .room-library { width: calc(100% - 20px); height: calc(100svh - 20px); }
+  .room-library-header { padding: 10px 16px; }
+}

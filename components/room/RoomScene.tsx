@@ -338,13 +338,19 @@ function advance(position: Point, dx: number, dz: number) {
   return walkable(zOnly) ? zOnly : position;
 }
 
-function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, sleeping, onWake, onNearby, pending, onArrive }: { keys: React.RefObject<Set<string>>; target: Point | null; setTarget: (point: Point | null) => void; reset: number; reduced: boolean; desktopMode: boolean; sleeping: boolean; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; pending: RoomObjectId | null; onArrive: (id: RoomObjectId) => void }) {
+function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, browsing, sleeping, onWake, onNearby, pending, onArrive }: { keys: React.RefObject<Set<string>>; target: Point | null; setTarget: (point: Point | null) => void; reset: number; reduced: boolean; desktopMode: boolean; browsing: boolean; sleeping: boolean; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; pending: RoomObjectId | null; onArrive: (id: RoomObjectId) => void }) {
   const actor = useRef<THREE.Group>(null);
   const position = useRef<Point>({ ...SPAWN });
   const forward = useRef(new THREE.Vector3());
   const previousNear = useRef<RoomObjectId | null>(null);
   const motion = useRef<Motion>({ walking: false, phase: 0, gesture: null, time: 0 });
   const wasSleeping = useRef(false);
+  useEffect(() => {
+    if (browsing) {
+      motion.current.walking = false;
+      setTarget(null);
+    }
+  }, [browsing, setTarget]);
   useEffect(() => {
     position.current = { ...SPAWN };
     wasSleeping.current = false;
@@ -390,7 +396,7 @@ function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, slee
   }, [desktopMode, setTarget]);
   useFrame(({ camera }, dt) => {
     if (!actor.current) return;
-    if (desktopMode) return;
+    if (desktopMode || browsing) return;
     dt = Math.min(dt, 0.05);
     const k = keys.current;
     const x = Number(k.has('d') || k.has('arrowright')) - Number(k.has('a') || k.has('arrowleft'));
@@ -509,7 +515,7 @@ export default function RoomScene({ keys, selected, onSelect, onWake, onNearby, 
       <hemisphereLight args={[simulation ? '#b7f5d5' : '#fff0c9', '#7c6846', simulation ? 0.8 : 1.5]} />
       <directionalLight position={[-7, 12, 9]} color={simulation ? '#c9f4dd' : '#ffe0a8'} intensity={simulation ? 1.35 : 2.4} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-11} shadow-camera-right={11} shadow-camera-top={10} shadow-camera-bottom={-10} shadow-normalBias={0.035} />
       <RoomShell selected={selected} onGo={goTo} simulation={simulation} reduced={reducedMotion} desktopMode={desktopMode} onExitDesktop={onExitDesktop} onWalk={(point) => { setPending(null); setTarget(point); }} />
-      <RoomPlayer keys={keys} target={target} setTarget={setTarget} reset={reset} reduced={reducedMotion} desktopMode={desktopMode} sleeping={selected === 'bed'} onWake={onWake} onNearby={onNearby} pending={pending} onArrive={(id) => { setPending(null); onSelect(id); }} />
+      <RoomPlayer keys={keys} target={target} setTarget={setTarget} reset={reset} reduced={reducedMotion} desktopMode={desktopMode} browsing={selected === 'learning' || selected === 'robot'} sleeping={selected === 'bed'} onWake={onWake} onNearby={onNearby} pending={pending} onArrive={(id) => { setPending(null); onSelect(id); }} />
       {target && <mesh position={[target.x, 0.035, target.z]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.18, 0.23, 32]} /><meshBasicMaterial color={gold} /></mesh>}
       <Camera reset={reset} focusDesk={desktopMode} />
     </Canvas>
