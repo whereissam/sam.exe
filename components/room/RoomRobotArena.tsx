@@ -162,7 +162,7 @@ function Arena({ playing, speed, reduced }: { playing: boolean; speed: number; r
     if (!(camera instanceof THREE.PerspectiveCamera)) return;
     const portrait = size.width / size.height < 0.8;
     camera.fov = portrait ? 60 : 43;
-    camera.position.set(...(portrait ? [6, 5, 8] as const : [4.5, 3.4, 6.2] as const));
+    camera.position.set(portrait ? 6 : 4.5, portrait ? 5 : 3.4, portrait ? 8 : 6.2);
     camera.lookAt(0, 0.9, 0);
     camera.updateProjectionMatrix();
   }, [camera, size.width, size.height]);
