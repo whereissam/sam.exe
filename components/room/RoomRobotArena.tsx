@@ -1,10 +1,8 @@
 'use client';
 
 /* oxlint-disable react/react-compiler -- Animation updates Three.js objects inside frame callbacks. */
-import { useEffect, useRef } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { ContactShadows, OrbitControls } from '@react-three/drei';
-import { X } from 'lucide-react';
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import './room-exhibits.css';
 
@@ -155,22 +153,10 @@ function Fighter({ side, color, time }: { side: -1 | 1; color: string; time: Rea
   );
 }
 
-function Arena({ playing, speed, reduced }: { playing: boolean; speed: number; reduced: boolean }) {
+export function ArenaWorld({ reduced }: { reduced: boolean }) {
   const time = useRef(0);
-  const { camera, size } = useThree();
-  useEffect(() => {
-    if (!(camera instanceof THREE.PerspectiveCamera)) return;
-    const portrait = size.width / size.height < 0.8;
-    camera.fov = portrait ? 60 : 43;
-    camera.position.set(portrait ? 6 : 4.5, portrait ? 5 : 3.4, portrait ? 8 : 6.2);
-    camera.lookAt(0, 0.9, 0);
-    camera.updateProjectionMatrix();
-  }, [camera, size.width, size.height]);
-  useFrame((_, dt) => { if (playing) time.current += Math.min(dt, 0.05) * speed; });
+  useFrame((_, dt) => { if (!reduced) time.current += Math.min(dt, 0.05); });
   return <>
-    <color attach="background" args={['#c4d0bb']} />
-    <ambientLight intensity={1.5} />
-    <directionalLight position={[-4, 8, 5]} intensity={2.4} castShadow shadow-mapSize={[1024, 1024]} />
     <Block at={[0, -0.17, 0]} size={[5.8, 0.32, 4.8]} color="#b69566" />
     <Block at={[0, 0, 0]} size={[5.6, 0.04, 4.6]} color="#e8dcc0" />
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.025, 0]}><ringGeometry args={[0.83, 0.87, 48]} /><meshBasicMaterial color="#a0875e" /></mesh>
@@ -181,24 +167,9 @@ function Arena({ playing, speed, reduced }: { playing: boolean; speed: number; r
     ])}
     <Fighter side={-1} color="#b96848" time={time} /><Fighter side={1} color="#527e77" time={time} />
     {!reduced && <ImpactBursts time={time} />}
-    <ContactShadows position={[0, 0.03, 0]} scale={7} opacity={0.3} blur={2} far={3} />
-    <OrbitControls target={[0, 0.9, 0]} enablePan={false} minDistance={5} maxDistance={16} minPolarAngle={0.45} maxPolarAngle={1.45} />
   </>;
 }
 
-export default function RoomRobotArena({ onClose, reducedMotion }: { onClose: () => void; reducedMotion: boolean }) {
-  const panel = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const dialog = panel.current;
-    dialog?.showModal();
-    return () => { dialog?.close(); previous?.focus(); };
-  }, []);
-  return <dialog ref={panel} className="room-arena" aria-labelledby="room-arena-title" onCancel={(event) => { event.preventDefault(); onClose(); }}>
-    <header className="room-library-header"><div><span>05 / G1 MOTION STUDY</span><h1 id="room-arena-title">Robot fight club.</h1></div><button onClick={onClose} aria-label="Close robot arena"><X size={22} /></button></header>
-    <div className="room-arena-stage" aria-label="Two stylized humanoid robots sparring in a 3D ring">
-      <Canvas shadows camera={{ position: [4.5, 3.4, 6.2], fov: 43 }} dpr={[1, 1.5]}><Arena playing={!reducedMotion} speed={1} reduced={reducedMotion} /></Canvas>
-      <div className="room-arena-match"><span><i /> RUST / 01</span><small>COMBO EXCHANGE</small><span>JADE / 02 <i /></span></div>
-    </div>
-  </dialog>;
+export default function RoomRobotArena() {
+  return <div className="room-arena-hud" aria-label="Robot fight club"><span>05 / ROBOT FIGHT CLUB</span><small>RUST / 01 · JADE / 02</small></div>;
 }
