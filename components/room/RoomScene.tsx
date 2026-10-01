@@ -3,7 +3,7 @@
 /* oxlint-disable react/react-compiler -- Three.js animation intentionally mutates scene refs in frame callbacks. */
 import { Canvas, type ThreeEvent, useFrame, useThree } from '@react-three/fiber';
 import { ContactShadows, Html, Line, OrbitControls } from '@react-three/drei';
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import {
   TravellerAvatar,
@@ -13,6 +13,11 @@ import {
 import { cameraRelative, type Point } from '@/components/world/movement';
 import { roomObjects, roomObjectById, type RoomObjectId } from './room-data';
 import RoomDesktop from './RoomDesktop';
+import { roomViewPose, type RoomView } from './room-views';
+
+const ShelfWorld = lazy(() => import('./RoomBookshelf').then(module => ({ default: module.ShelfWorld })));
+const ArenaWorld = lazy(() => import('./RoomRobotArena').then(module => ({ default: module.ArenaWorld })));
+const NearbyObject = createContext<RoomObjectId | null>(null);
 
 type Vec3 = [number, number, number];
 const SPAWN: Point = { x: 0, z: 2.2 };
@@ -38,7 +43,8 @@ function B({ at, size, color, rotation = [0, 0, 0], glow = false }: { at: Vec3; 
 
 function Inspectable({ id, selected, onGo, labelY = 2.7, children }: { id: RoomObjectId; selected: RoomObjectId | null; onGo: (id: RoomObjectId) => void; labelY?: number; children: React.ReactNode }) {
   const [hovered, setHovered] = useState(false);
-  const active = selected === id || hovered;
+  const nearby = useContext(NearbyObject);
+  const active = selected === id || hovered || nearby === id;
   return (
     <group
       onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); if (event.delta <= 5) onGo(id); }}
@@ -59,6 +65,23 @@ function Inspectable({ id, selected, onGo, labelY = 2.7, children }: { id: RoomO
       )}
     </group>
   );
+}
+
+function ExitDoor({ onGo }: { onGo: (id: RoomObjectId) => void }) {
+  const [hovered, setHovered] = useState(false);
+  const nearby = useContext(NearbyObject);
+  return <group position={[-7.8, 0, 2.15]} rotation={[0, Math.PI / 2, 0]} onClick={event => { event.stopPropagation(); if (event.delta <= 5) onGo('exit'); }} onPointerOver={event => { event.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { setHovered(false); document.body.style.cursor = ''; }}>
+    {/* A shallow wall-mounted door, not another object in the walking path. */}
+    <B at={[0, 1.23, 0]} size={[1.23, 2.46, 0.09]} color="#705b40" />
+    <B at={[0, 1.21, 0.06]} size={[1.06, 2.34, 0.06]} color={hovered ? '#c4a575' : '#b5986e'} />
+    {[-0.59, 0.59].map(x => <B key={x} at={[x, 1.26, 0.1]} size={[0.09, 2.52, 0.11]} color="#d1b588" />)}
+    <B at={[0, 2.5, 0.1]} size={[1.27, 0.09, 0.11]} color="#d1b588" />
+    {[0.66, 1.74].map(y => <B key={y} at={[0, y, 0.1]} size={[0.77, 0.84, 0.035]} color="#aa8c63" />)}
+    <B at={[0.4, 1.16, 0.13]} size={[0.055, 0.19, 0.035]} color="#806741" />
+    <B at={[0.35, 1.2, 0.17]} size={[0.15, 0.035, 0.05]} color={gold} />
+    <B at={[0, 0.025, 0.12]} size={[1.24, 0.05, 0.32]} color="#d1b588" />
+    {(hovered || nearby === 'exit') && <Html center position={[0, 2.75, 0.2]} zIndexRange={[9, 0]}><button className="room-exit-sign" onClick={() => onGo('exit')}>← Island</button></Html>}
+  </group>;
 }
 
 function MechanicalKeyboard() {
@@ -338,13 +361,19 @@ function advance(position: Point, dx: number, dz: number) {
   return walkable(zOnly) ? zOnly : position;
 }
 
-function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, sleeping, onWake, onNearby, pending, onArrive }: { keys: React.RefObject<Set<string>>; target: Point | null; setTarget: (point: Point | null) => void; reset: number; reduced: boolean; desktopMode: boolean; sleeping: boolean; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; pending: RoomObjectId | null; onArrive: (id: RoomObjectId) => void }) {
+function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, browsing, sleeping, onWake, onNearby, pending, onArrive }: { keys: React.RefObject<Set<string>>; target: Point | null; setTarget: (point: Point | null) => void; reset: number; reduced: boolean; desktopMode: boolean; browsing: boolean; sleeping: boolean; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; pending: RoomObjectId | null; onArrive: (id: RoomObjectId) => void }) {
   const actor = useRef<THREE.Group>(null);
   const position = useRef<Point>({ ...SPAWN });
   const forward = useRef(new THREE.Vector3());
   const previousNear = useRef<RoomObjectId | null>(null);
   const motion = useRef<Motion>({ walking: false, phase: 0, gesture: null, time: 0 });
   const wasSleeping = useRef(false);
+  useEffect(() => {
+    if (browsing) {
+      motion.current.walking = false;
+      setTarget(null);
+    }
+  }, [browsing, setTarget]);
   useEffect(() => {
     position.current = { ...SPAWN };
     wasSleeping.current = false;
@@ -390,7 +419,7 @@ function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, slee
   }, [desktopMode, setTarget]);
   useFrame(({ camera }, dt) => {
     if (!actor.current) return;
-    if (desktopMode) return;
+    if (desktopMode || browsing) return;
     dt = Math.min(dt, 0.05);
     const k = keys.current;
     const x = Number(k.has('d') || k.has('arrowright')) - Number(k.has('a') || k.has('arrowleft'));
@@ -444,7 +473,8 @@ function RoomShell({ simulation, selected, onGo, reduced, desktopMode, onExitDes
       <B at={[0, 3, -6.02]} size={[16, 6, 0.2]} color="#a9c5ba" />
       <B at={[-8.02, 3, 0]} size={[0.2, 6, 12]} color="#9bbab0" />
       <B at={[0, 0.16, -5.83]} size={[16, 0.32, 0.32]} color="#75968f" />
-      <B at={[-7.83, 0.16, 0]} size={[0.32, 0.32, 12]} color="#75968f" />
+      <B at={[-7.83, 0.16, -2.25]} size={[0.32, 0.32, 7.5]} color="#75968f" />
+      <B at={[-7.83, 0.16, 4.4]} size={[0.32, 0.32, 3.2]} color="#75968f" />
       <group position={[5.65, 3.45, -5.86]}>
         <B at={[0, 0, 0]} size={[3.15, 2.5, 0.12]} color="#d9e1cf" />
         {[-1.55, 0, 1.55].map((x) => <B key={x} at={[x, 0, 0.09]} size={[0.09, 2.65, 0.1]} color={ink} />)}
@@ -454,8 +484,8 @@ function RoomShell({ simulation, selected, onGo, reduced, desktopMode, onExitDes
       <AICore selected={selected} onGo={onGo} simulation={simulation} />
       <WebGLStudy selected={selected} onGo={onGo} simulation={simulation} />
       <RobotArm selected={selected} onGo={onGo} simulation={simulation} />
-      <G1Robot selected={selected} onGo={onGo} simulation={simulation} />
-      <Learning selected={selected} onGo={onGo} simulation={simulation} />
+      {selected !== 'robot' && <G1Robot selected={selected} onGo={onGo} simulation={simulation} />}
+      <ExitDoor onGo={onGo} />
       <TravelCorner selected={selected} onGo={onGo} simulation={simulation} />
       <Relic selected={selected} onGo={onGo} simulation={simulation} />
       <LivingDetails reduced={reduced} selected={selected} onGo={onGo} />
@@ -464,28 +494,42 @@ function RoomShell({ simulation, selected, onGo, reduced, desktopMode, onExitDes
   );
 }
 
-function Camera({ reset, focusDesk }: { reset: number; focusDesk: boolean }) {
+function Camera({ reset, focusDesk, view, reduced, bookIndex, bookFocused }: { reset: number; focusDesk: boolean; view: RoomView; reduced: boolean; bookIndex: number; bookFocused: boolean }) {
   const controls = useRef<React.ComponentRef<typeof OrbitControls>>(null);
-  const overviewPending = useRef(true);
+  const transition = useRef(true);
+  const previous = useRef<RoomView>('overview');
+  const previousDesk = useRef(false);
+  const saved = useRef<{ position: THREE.Vector3; target: THREE.Vector3; zoom: number; width: number; height: number } | null>(null);
+  const destination = useRef({ position: new THREE.Vector3(13, 12, 16), target: new THREE.Vector3(0, 0.8, 0), zoom: 52 });
   const { camera, size } = useThree();
   useEffect(() => {
-    overviewPending.current = !focusDesk;
-  }, [camera, focusDesk, reset, size.height, size.width]);
+    saved.current = null;
+  }, [reset]);
+  useEffect(() => {
+    if (!controls.current) return;
+    if ((previous.current === 'overview' && view !== 'overview') || (!previousDesk.current && focusDesk)) saved.current = { position: camera.position.clone(), target: controls.current.target.clone(), zoom: (camera as THREE.OrthographicCamera).zoom, width: size.width, height: size.height };
+    const pose = roomViewPose(view, size.width, size.height, bookIndex, bookFocused);
+    destination.current = view === 'overview' && saved.current ? { ...saved.current, zoom: saved.current.zoom * pose.zoom / roomViewPose('overview', saved.current.width, saved.current.height).zoom } : { position: new THREE.Vector3(...pose.position as [number, number, number]), target: new THREE.Vector3(...pose.target as [number, number, number]), zoom: pose.zoom };
+    previous.current = view;
+    previousDesk.current = focusDesk;
+    transition.current = true;
+  }, [camera, view, focusDesk, reset, size.height, size.width, bookIndex, bookFocused]);
   useFrame((_, delta) => {
     if (!controls.current) return;
     const orthographic = camera as THREE.OrthographicCamera;
     if (!focusDesk) {
-      if (!overviewPending.current) return;
-      const fitZoom = Math.max(18, Math.min(64, Math.min(size.width / 22, size.height / 14) * 0.9));
-      camera.position.set(13, 12, 16);
-      controls.current.target.set(0, 0.8, 0);
-      orthographic.zoom = fitZoom;
+      if (!transition.current) return;
+      const blend = reduced ? 1 : 1 - Math.exp(-Math.min(delta, 0.05) * 5);
+      const goal = destination.current;
+      camera.position.lerp(goal.position, blend);
+      controls.current.target.lerp(goal.target, blend);
+      orthographic.zoom += (goal.zoom - orthographic.zoom) * blend;
       orthographic.updateProjectionMatrix();
       controls.current.update();
-      overviewPending.current = false;
+      if (camera.position.distanceTo(goal.position) < 0.01 && Math.abs(orthographic.zoom - goal.zoom) < 0.1) transition.current = false;
       return;
     }
-    overviewPending.current = true;
+    transition.current = true;
     camera.position.lerp(new THREE.Vector3(-5.1, 2.42, -1.2), Math.min(1, delta * 4.5));
     controls.current.target.lerp(new THREE.Vector3(-5.1, 1.88, -5.02), Math.min(1, delta * 5));
     const focusZoom = Math.min(500, size.width / 2.45);
@@ -493,25 +537,38 @@ function Camera({ reset, focusDesk }: { reset: number; focusDesk: boolean }) {
     orthographic.updateProjectionMatrix();
     controls.current.update();
   });
-  return <OrbitControls ref={controls} makeDefault target={[0, 0.8, 0]} minPolarAngle={0.56} maxPolarAngle={1.18} minZoom={18} maxZoom={580} enablePan={false} enabled={!focusDesk} dampingFactor={0.08} />;
+  return <OrbitControls ref={controls} makeDefault target={[0, 0.8, 0]} minPolarAngle={0.56} maxPolarAngle={1.4} minAzimuthAngle={0.05} maxAzimuthAngle={1.5} minZoom={18} maxZoom={580} enablePan={false} enabled={!focusDesk && !bookFocused} onStart={() => { transition.current = false; }} dampingFactor={0.08} />;
 }
 
-export default function RoomScene({ keys, selected, onSelect, onWake, onNearby, simulation, desktopMode, onExitDesktop, reset, reducedMotion }: { keys: React.RefObject<Set<string>>; selected: RoomObjectId | null; onSelect: (id: RoomObjectId) => void; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; simulation: boolean; desktopMode: boolean; onExitDesktop: () => void; reset: number; reducedMotion: boolean; moving: boolean }) {
+export default function RoomScene({ keys, selected, nearby, onSelect, onWake, onNearby, simulation, desktopMode, onExitDesktop, reset, reducedMotion, view, bookIndex, bookFocused, bookTurn, onBookSelect }: { keys: React.RefObject<Set<string>>; selected: RoomObjectId | null; nearby: RoomObjectId | null; onSelect: (id: RoomObjectId) => void; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; simulation: boolean; desktopMode: boolean; onExitDesktop: () => void; reset: number; reducedMotion: boolean; moving: boolean; view: RoomView; bookIndex: number; bookFocused: boolean; bookTurn: number; onBookSelect: (index: number) => void }) {
   const [target, setTargetState] = useState<Point | null>(null);
   const [pending, setPending] = useState<RoomObjectId | null>(null);
   const setTarget = useCallback((point: Point | null) => setTargetState(point), []);
-  function goTo(id: RoomObjectId) { const item = roomObjectById[id]; setPending(id); setTarget({ x: item.approach[0], z: item.approach[1] }); }
+  useEffect(() => { setPending(null); setTarget(null); keys.current.clear(); }, [view, reset, keys, setTarget]);
+  function goTo(id: RoomObjectId) {
+    if (selected === 'learning' || selected === 'robot') { if (id === 'exit') onSelect(id); return; }
+    const item = roomObjectById[id]; setPending(id); setTarget({ x: item.approach[0], z: item.approach[1] });
+  }
   return (
     <Canvas shadows orthographic camera={{ position: [13, 12, 16], zoom: 52, near: 0.1, far: 80 }} dpr={[1, 1.6]} gl={{ antialias: true, powerPreference: 'high-performance' }} onCreated={({ camera }) => camera.lookAt(0, 0.8, 0)}>
+      <NearbyObject.Provider value={view === 'overview' ? nearby : null}>
       <color attach="background" args={[simulation ? '#263e3b' : '#bdd3ca']} />
       <fog attach="fog" args={[simulation ? '#263e3b' : '#bdd3ca', 24, 42]} />
       <ambientLight intensity={simulation ? 0.75 : 1.45} />
       <hemisphereLight args={[simulation ? '#b7f5d5' : '#fff0c9', '#7c6846', simulation ? 0.8 : 1.5]} />
       <directionalLight position={[-7, 12, 9]} color={simulation ? '#c9f4dd' : '#ffe0a8'} intensity={simulation ? 1.35 : 2.4} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-11} shadow-camera-right={11} shadow-camera-top={10} shadow-camera-bottom={-10} shadow-normalBias={0.035} />
-      <RoomShell selected={selected} onGo={goTo} simulation={simulation} reduced={reducedMotion} desktopMode={desktopMode} onExitDesktop={onExitDesktop} onWalk={(point) => { setPending(null); setTarget(point); }} />
-      <RoomPlayer keys={keys} target={target} setTarget={setTarget} reset={reset} reduced={reducedMotion} desktopMode={desktopMode} sleeping={selected === 'bed'} onWake={onWake} onNearby={onNearby} pending={pending} onArrive={(id) => { setPending(null); onSelect(id); }} />
+      <RoomShell selected={selected} onGo={goTo} simulation={simulation} reduced={reducedMotion} desktopMode={desktopMode} onExitDesktop={onExitDesktop} onWalk={(point) => { if (view === 'overview') { setPending(null); setTarget(point); } }} />
+      <Suspense fallback={<Learning selected={selected} onGo={goTo} simulation={simulation} />}>
+        <Inspectable id="learning" selected={selected} onGo={goTo} labelY={3}>
+          <B at={[-7.05, 0.6, 0.1]} size={[0.85, 1.2, 2.92]} color="#b28c64" />
+          <group position={[-7, 1.6, 0.1]} rotation={[0, Math.PI / 2, 0]} scale={0.35}><ShelfWorld selected={bookIndex} onSelect={onBookSelect} turn={bookTurn} reduced={reducedMotion} focused={selected === 'learning' && bookFocused} /></group>
+        </Inspectable>
+      </Suspense>
+      {selected === 'robot' && <group position={[2.4, 1.4, -4.95]} scale={0.4}><Suspense fallback={null}><ArenaWorld reduced={reducedMotion} /></Suspense></group>}
+      <RoomPlayer keys={keys} target={target} setTarget={setTarget} reset={reset} reduced={reducedMotion} desktopMode={desktopMode} browsing={selected === 'learning' || selected === 'robot'} sleeping={selected === 'bed'} onWake={onWake} onNearby={onNearby} pending={pending} onArrive={(id) => { setPending(null); onSelect(id); }} />
       {target && <mesh position={[target.x, 0.035, target.z]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.18, 0.23, 32]} /><meshBasicMaterial color={gold} /></mesh>}
-      <Camera reset={reset} focusDesk={desktopMode} />
+      <Camera reset={reset} focusDesk={desktopMode} view={view} reduced={reducedMotion} bookIndex={bookIndex} bookFocused={bookFocused} />
+      </NearbyObject.Provider>
     </Canvas>
   );
 }

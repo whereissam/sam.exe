@@ -221,8 +221,16 @@ body:has(.room-world) { overflow: hidden; }
 .room-world-header a, .room-world-header button { pointer-events: auto; }
 .room-world-back {
   width: max-content; display: flex; align-items: center; gap: 9px;
-  font-size: 9px; letter-spacing: 1.8px; font-weight: 600;
+  min-height: 44px; padding: 0 12px; border: 1px solid var(--room-ui-line); background: var(--room-ui-surface); color: var(--room-ui);
+  font-size: 9px; letter-spacing: 1.1px; font-weight: 600; cursor: pointer;
 }
+.room-exit-sign { min-height: 36px; padding: 6px 10px; background: #f1e7cd; border: 1px solid #79653b33; color: #3b3324; white-space: nowrap; font-size: 10px; letter-spacing: .5px; cursor: pointer; }
+.room-viewpoints { position: absolute; z-index: 12; bottom: 70px; right: 3.2%; display: flex; gap: 4px; padding: 4px; background: var(--room-ui-surface); border: 1px solid var(--room-ui-line); }
+.room-viewpoints button { min-height: 40px; padding: 0 14px; font-size: 10px; color: var(--room-ui-muted); background: transparent; cursor: pointer; }
+.room-viewpoints button[aria-pressed="true"] { color: #f1e8cf; background: #4a5f59; }
+.room-viewpoints button:focus-visible, .room-world-back:focus-visible, .room-exit-sign:focus-visible { outline: 2px solid #a55236; outline-offset: 2px; }
+.is-exploring .room-touch-pad { display: none; }
+.room-door-action { bottom: 130px; }
 .room-world-title { text-align: center; line-height: 1; }
 .room-world-title strong { display: block; font-family: 'Space Grotesk', sans-serif; font-size: 14px; letter-spacing: .3px; }
 .room-world-title span { display: block; margin-top: 7px; font-size: 7px; letter-spacing: 2px; color: var(--room-ui-muted); }
@@ -278,6 +286,11 @@ body:has(.room-world) { overflow: hidden; }
 .room-touch-pad { display: none; }
 
 @media (max-width: 760px), (pointer: coarse) {
+  .room-viewpoints { right: 16px; top: 72px; bottom: auto; }
+  .is-exploring .room-viewpoints { top: auto; bottom: 55px; }
+  .room-viewpoints button { padding: 0 10px; min-height: 44px; }
+  .room-world-back { font-size: 8px; padding-inline: 8px; }
+  .room-door-action { bottom: 130px; max-width: calc(100% - 32px); white-space: nowrap; font-size: 8px; }
   .room-world-header { height: 60px; padding-inline: 16px; grid-template-columns: 1fr auto; }
   .room-world-title { display: none; }
   .room-world-actions button:first-child { padding: 0 10px; }
@@ -290,6 +303,7 @@ body:has(.room-world) { overflow: hidden; }
   .room-touch-w { grid-area: 1 / 2; } .room-touch-a { grid-area: 2 / 1; } .room-touch-s { grid-area: 2 / 2; } .room-touch-d { grid-area: 2 / 3; }
 }
 @media (max-height: 600px) {
+  .is-exploring .room-viewpoints { bottom: 40px; }
   .room-world { min-height: 0; }
   .room-world-header { height: 48px; }
   .room-world-title span { display: none; }
