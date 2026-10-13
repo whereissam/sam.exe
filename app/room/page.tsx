@@ -139,7 +139,7 @@ export default function RoomPage() {
     <main className={`room-world ${simulation ? 'is-simulating' : ''} ${view !== 'overview' || desktopMode ? 'is-exploring' : ''} ${bookFocused ? 'has-book-details' : ''}`}>
       <section ref={sceneSurface} className="room-world-canvas" aria-label="Sam's interactive 3D workshop. Walk with WASD or the arrow keys, tap the floor to move, and inspect nearby objects.">
         <Suspense fallback={<div className="room-world-loading">OPENING SAM’S ROOM…</div>}>
-          <RoomScene keys={keys} selected={selected} nearby={nearby} onSelect={inspect} onWake={() => setSelected(null)} onNearby={approach} simulation={simulation} desktopMode={desktopMode} onExitDesktop={returnToRoom} reset={reset} reducedMotion={reducedMotion} moving={moving} view={view} bookIndex={bookIndex} bookFocused={bookFocused} bookTurn={bookTurn} onBookSelect={value => { selectBook(value); setBookFocused(true); inspect('learning'); }} />
+          <RoomScene keys={keys} selected={selected} nearby={nearby} onSelect={inspect} onWake={() => setSelected(null)} onNearby={approach} simulation={simulation} desktopMode={desktopMode} onExitDesktop={returnToRoom} reset={reset} reducedMotion={reducedMotion} moving={moving} view={view} bookIndex={bookIndex} bookFocused={bookFocused} bookTurn={bookTurn} onBookClose={() => setBookFocused(false)} onBookSelect={value => { selectBook(value); setBookFocused(true); inspect('learning'); }} />
         </Suspense>
       </section>
 
@@ -182,7 +182,7 @@ export default function RoomPage() {
       <div className="room-world-controls">
         <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> WALK</span>
         <span>{view === 'overview' ? 'TAP FLOOR TO MOVE' : 'DRAG TO EXPLORE THIS VIEW'}</span>
-        <span>{view === 'shelf' ? bookFocused ? 'DRAG THE BOOK TO TURN IT' : 'DRAG TO ORBIT · SCROLL TO BROWSE BOOKS' : 'DRAG TO ORBIT · SCROLL TO ZOOM'}</span>
+        <span>{view === 'shelf' ? bookFocused ? 'TAP PAGE TO TURN · COVER TO RETURN · RIBBONS TO CHANGE BOOK' : 'DRAG TO ORBIT · SCROLL TO BROWSE BOOKS' : 'DRAG TO ORBIT · SCROLL TO ZOOM'}</span>
         <span><i /> {simulation ? 'SIMULATION ACTIVE' : 'ROOM ONLINE'}</span>
       </div>
 

@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation';
 import { SoundToggle } from '../audio/SoundToggle';
 import { playSound } from '../audio/sound';
 /* oxlint-disable react/react-compiler -- The frame loop updates an explicitly mutable shared position ref for the Three.js camera and traveller. */
@@ -49,6 +50,7 @@ import {
 } from '../world/CountryArchitecture';
 import { WorldMap } from '../world/WorldMap';
 import { GroundLabel } from '../world/GroundLabel';
+import { AtlasDestinations } from '../world/RoomDoors';
 import { Rest, type DailyRoutine } from '../world/daily-routine';
 import { cameraRelative, type Point } from '../world/movement';
 import { followRoute } from '../world/navigation';
@@ -95,6 +97,29 @@ function Block({
     </mesh>
   );
 }
+function AtlasPortal({ point, label, player, paused, onApproach, onEnter }: { point: Point; label: string; player: RefObject<Point>; paused: boolean; onApproach: () => void; onEnter: () => void }) {
+  const entered = useRef(false);
+  const [hovered, setHovered] = useState(false);
+  useFrame(() => {
+    if (paused || entered.current) return;
+    if (Math.hypot(player.current.x - point.x, player.current.z - point.z) < 0.32) {
+      entered.current = true;
+      onEnter();
+    }
+  });
+  return <group position={[point.x, 0, point.z]} onClick={event => { if (event.delta > 5 || paused) return; event.stopPropagation(); onApproach(); }} onPointerOver={event => { event.stopPropagation(); setHovered(true); }} onPointerOut={() => setHovered(false)}>
+    <Block position={[0, 0.04, 0]} size={[1.6, 0.08, 1.1]} color="#d4b77b" />
+    {[-0.62, 0.62].map(x => <Block key={x} position={[x, 1.02, -0.2]} size={[0.15, 2.04, 0.24]} color="#c2a16a" />)}
+    <Block position={[0, 2.04, -0.2]} size={[1.4, 0.18, 0.26]} color="#e6ce93" />
+    <mesh position={[0, 1, -0.21]}><planeGeometry args={[1.1, 1.85]} /><meshStandardMaterial color={hovered ? '#96d6be' : '#6eaaa0'} emissive="#739e89" emissiveIntensity={hovered ? 0.5 : 0.18} side={THREE.DoubleSide} /></mesh>
+    {/* A miniature island suspended inside the doorway makes its destination visible. */}
+    <mesh position={[0, 0.8, -0.04]}><cylinderGeometry args={[0.38, 0.24, 0.15, 6]} /><meshStandardMaterial color="#ddc894" /></mesh>
+    <Block position={[0, 1.09, -0.04]} size={[0.25, 0.44, 0.23]} color="#eeddb0" />
+    <mesh position={[0, 1.4, -0.04]} rotation={[0, Math.PI / 4, 0]}><coneGeometry args={[0.25, 0.22, 4]} /><meshStandardMaterial color="#bd885c" /></mesh>
+    <GroundLabel title={label} position={[0, 0.09, 0.45]} width={2.15} onClick={onApproach} />
+  </group>;
+}
+
 function Tree({
   position,
   pink = false,
@@ -465,13 +490,16 @@ export default function PhotoAtlas({
   lowPower = false,
   routine = 'work',
   night = false,
+  onExit,
 }: {
   character?: Character;
   reduced?: boolean;
   lowPower?: boolean;
   routine?: DailyRoutine;
   night?: boolean;
+  onExit?: () => void;
 }) {
+  const router = useRouter();
   const [country, setCountry] = useState<AtlasCountry | null>(null),
     [near, setNear] = useState<AtlasCountry | null>(null);
   const [destination, setDestination] = useState<Destination | null>(null),
@@ -655,13 +683,7 @@ export default function PhotoAtlas({
     >
       <SoundToggle className="atlas-sound" />
       <header className="atlas-heading">
-        {country ? (
-          <button onClick={back}>
-            <ArrowLeft size={16} /> Back to the atlas
-          </button>
-        ) : (
-          <span>THE DARKROOM / A LITTLE WORLD OF MEMORIES</span>
-        )}
+        <span>THE DARKROOM / A LITTLE WORLD OF MEMORIES</span>
         <h2>{country?.name ?? 'A world of little memories.'}</h2>
         <p>
           {country
@@ -845,6 +867,23 @@ export default function PhotoAtlas({
                   />
                 </>
               )}
+              {!country && <AtlasDestinations />}
+              <AtlasPortal
+                point={{ x: country ? photoX(0, country.photos.length) - 1.5 : -3.2, z: country ? 3.4 : 3.2 }}
+                label="← BACK TO ISLAND"
+                player={player}
+                paused={!!note || !active}
+                onApproach={() => walkTo({ x: country ? photoX(0, country.photos.length) - 1.5 : -3.2, z: country ? 3.4 : 3.2 })}
+                onEnter={() => { keys.current.clear(); setDestination(null); if (onExit) onExit(); else router.push('/'); }}
+              />
+              {country && <AtlasPortal
+                point={{ x: photoX(0, country.photos.length) + 1.5, z: 3.4 }}
+                label="← WORLD MAP"
+                player={player}
+                paused={!!note || !active}
+                onApproach={() => walkTo({ x: photoX(0, country.photos.length) + 1.5, z: 3.4 })}
+                onEnter={back}
+              />}
               <Walker
                 character={character}
                 keys={keys}

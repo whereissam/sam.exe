@@ -30,7 +30,7 @@ export const roomObjects: RoomObject[] = [
   { id: 'robot', number: '05', label: 'G1 · FIGHT CLUB', name: 'Robot fight club', zone: 'PHYSICAL', note: 'Two humanoid robots in a choreographed sparring loop. Move closer and orbit the miniature arena.', approach: [2.0, -3.5] },
   { id: 'learning', number: '06', label: 'BOOKSHELF', name: 'Books I love', zone: 'PERSONAL', note: 'Browse the shelf, pick a book, and turn it over. A little collection of ideas to come back to.', approach: [-5.55, 0.45] },
   { id: 'travel', number: '07', label: 'LIFE MAP', name: 'A life with several coordinates', zone: 'PERSONAL', note: 'Taiwan, Berlin, Albania, Greece. The backpack stays ready because perspective changes when the coordinates do.', approach: [-4.85, 3.55] },
-  { id: 'relic', number: '08', label: 'KEEPSAKE', name: 'A blockchain relic', zone: 'PERSONAL', note: 'A small keepsake on the bedside table from years spent in Web3, as the work moves toward intelligent physical systems.', approach: [3.25, -2.4] },
+  { id: 'relic', number: '08', label: 'KEEPSAKE', name: 'A blockchain relic', zone: 'PERSONAL', note: 'A small keepsake on the bedside table from years spent in Web3, as the work moves toward intelligent physical systems.', approach: [2.55, -2.4] },
 ];
 
 export const roomObjectById = Object.fromEntries(

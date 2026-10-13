@@ -20,7 +20,7 @@ export default function AtlasPage() {
   return (
     <main className="atlas-page">
       <nav className="atlas-page-nav">
-        <Link href="/">← The island</Link>
+        <Link href="/">← Back to island</Link>
         <span>
           {stories.photos.length} photographs · {countries.length} countries
         </span>

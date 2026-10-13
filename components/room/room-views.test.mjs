@@ -23,10 +23,13 @@ test('portrait bookshelf framing follows the selected book', () => {
   assert.equal(first.zoom, last.zoom);
 });
 
-test('focused book framing reserves space beside or below the model for notes', () => {
+test('focused reading moves away from the bookshelf to a separate central reading position', () => {
   for (const [width, height] of [[1440, 900], [390, 844]]) {
     const shelf = roomViewPose('shelf', width, height, 2, false);
     const focused = roomViewPose('shelf', width, height, 2, true);
     assert.notDeepEqual(shelf.target, focused.target);
+    assert.deepEqual(focused.target, [0, 1.7, 1.2]);
+    assert.ok(Math.abs(focused.target[0] - shelf.target[0]) > 6);
+    assert.deepEqual(roomViewPose('shelf', width, height, 0, true).target, focused.target);
   }
 });

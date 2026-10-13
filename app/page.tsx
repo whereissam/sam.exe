@@ -49,6 +49,7 @@ const Travel = lazy(() =>
   import('@/components/stories/Stories').then((m) => ({ default: m.Travel })),
 );
 const World = lazy(() => import('@/components/world/World'));
+const RobotTeleoperation = lazy(() => import('@/components/stories/RobotTeleoperation'));
 const Projects = lazy(() => import('@/components/stories/Projects'));
 class SceneBoundary extends Component<
   { children: ReactNode },
@@ -158,6 +159,7 @@ export default function Home() {
   }
   function select(d: District) {
     playSound('open');
+    if (d.id === 'robotics') { keys.current.clear(); setMoving(false); setVisited(v => v.includes(d.id) ? v : [...v, d.id]); router.push('/robot-lab'); return; }
     previousFocus.current = document.activeElement as HTMLElement;
     setSelected(d);
     setVisited((v) => (v.includes(d.id) ? v : [...v, d.id]));
@@ -531,7 +533,7 @@ export default function Home() {
       </div>
       {near && !selected && (
         <button className="interact" onClick={() => select(near)}>
-          <kbd>E</kbd> Explore {near.title} <ArrowUpRight size={15} />
+          <kbd>E</kbd> {near.id === 'robotics' ? 'Enter' : 'Explore'} {near.title} <ArrowUpRight size={15} />
         </button>
       )}
       {ready && (
@@ -663,7 +665,7 @@ export default function Home() {
           onClick={(event) => {
             if (isBackdropClick(event)) dismiss();
           }}
-          className={`detail-panel ${['photography', 'travel', 'frontend'].includes(selected.id) ? 'story-panel' : ''} ${selected.id === 'photography' ? 'atlas-panel' : ''}`}
+          className={`detail-panel ${['photography', 'travel', 'frontend', 'robotics'].includes(selected.id) ? 'story-panel' : ''} ${selected.id === 'photography' ? 'atlas-panel' : ''}`}
           aria-label={selected.title}
         >
           <button
@@ -692,12 +694,18 @@ export default function Home() {
           {selected.id === 'photography' && (
             <Suspense fallback={<p>Opening the memory atlas…</p>}>
               <PhotoAtlas
+                onExit={dismiss}
                 character={character}
                 reduced={reduced}
                 lowPower={mobile}
                 routine={routine}
                 night={night}
               />
+            </Suspense>
+          )}
+          {selected.id === 'robotics' && (
+            <Suspense fallback={<p>Opening the teleoperation demo…</p>}>
+              <RobotTeleoperation reduced={reduced} />
             </Suspense>
           )}
           {selected.id === 'travel' && (
@@ -715,7 +723,7 @@ export default function Home() {
               />
             </Suspense>
           )}
-          {!['frontend', 'photography'].includes(selected.id) && (
+          {!['frontend', 'photography', 'robotics'].includes(selected.id) && (
             <div className="work-note">
               This district is a starting point. Project case studies are coming
               as the world grows.

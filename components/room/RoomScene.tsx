@@ -13,15 +13,18 @@ import {
 import { cameraRelative, type Point } from '@/components/world/movement';
 import { roomObjects, roomObjectById, type RoomObjectId } from './room-data';
 import RoomDesktop from './RoomDesktop';
+import { Passage, StudioDoor } from '@/components/world/RoomDoors';
 import { roomViewPose, type RoomView } from './room-views';
+import { shelfBooks } from './books';
 
+const ReadingBook = lazy(() => import('./RoomBookshelf').then(module => ({ default: module.ReadingBook })));
 const ShelfWorld = lazy(() => import('./RoomBookshelf').then(module => ({ default: module.ShelfWorld })));
 const ArenaWorld = lazy(() => import('./RoomRobotArena').then(module => ({ default: module.ArenaWorld })));
 const NearbyObject = createContext<RoomObjectId | null>(null);
 
 type Vec3 = [number, number, number];
 const SPAWN: Point = { x: 0, z: 2.2 };
-// Only enlarge Sam in this room; furniture and island characters retain their sizes.
+// Both travellers share the room scale; island characters retain their sizes.
 const PLAYER_SCALE = 1.65;
 // Pillow top = 1.09. Head back = -0.33 in the model, scaled by 0.52 * PLAYER_SCALE.
 const PILLOW_HEAD_LIFT = (1.09 - 1.0) / (0.52 * PLAYER_SCALE) + 0.33;
@@ -267,14 +270,18 @@ function TravelCorner({ selected, onGo }: ObjectProps) {
       <group position={[-6.35, 0, 4.35]}>
         <B at={[-1.4, 2.8, 0]} size={[0.12, 2.25, 3.1]} color="#e9d7ad" />
         {[[-1.32, 3.3, -0.55], [-1.32, 2.75, 0.25], [-1.32, 2.25, 0.7]].map((p, i) => <mesh key={i} position={p as Vec3} rotation={[0, Math.PI / 2, 0]}><circleGeometry args={[0.08, 10]} /><meshBasicMaterial color={[rust, gold, teal][i]} /></mesh>)}
+        <Passage href="/atlas/world" label="Explore the memory atlas">
         <mesh position={[0, 1.12, -0.3]} castShadow><sphereGeometry args={[0.62, 16, 10]} /><meshStandardMaterial color={paleTeal} flatShading /></mesh>
         <mesh position={[0, 1.12, -0.3]} rotation={[0, 0, 0.4]}><torusGeometry args={[0.69, 0.035, 6, 32]} /><meshStandardMaterial color={ink} /></mesh>
         <B at={[0, 0.38, -0.3]} size={[0.65, 0.12, 0.65]} color="#b88a58" />
         <B at={[0, 0.19, -0.3]} size={[0.1, 0.38, 0.1]} color={ink} />
         <B at={[0, 0.06, -0.3]} size={[0.6, 0.12, 0.6]} color="#b88a58" />
+        </Passage>
+        <Passage current="room" label="An unplanned journey">
         <B at={[0.62, 0.65, 0.72]} size={[0.82, 1.28, 0.48]} color={rust} />
         <B at={[0.62, 1.34, 0.72]} size={[0.38, 0.1, 0.16]} color={ink} />
         {[-0.22, 0.22].map((x) => <B key={x} at={[0.62 + x, 0.65, 0.965]} size={[0.07, 1.22, 0.035]} color="#e4bc87" />)}
+        </Passage>
       </group>
     </Inspectable>
   );
@@ -283,7 +290,7 @@ function TravelCorner({ selected, onGo }: ObjectProps) {
 function Relic({ selected, onGo, simulation }: ObjectProps) {
   return (
     <Inspectable id="relic" selected={selected} onGo={onGo} labelY={2.15}>
-      <group position={[3.25, 0.98, -3.6]} scale={0.3}>
+      <group position={[2.55, 0.98, -3.6]} scale={0.3}>
         <mesh position={[0, 0.44, 0]} castShadow><cylinderGeometry args={[0.62, 0.78, 0.82, 6]} /><meshStandardMaterial color="#c3a56d" /></mesh>
         <mesh position={[0, 1.18, 0]} rotation={[0, 0, Math.PI / 4]} castShadow><octahedronGeometry args={[0.43, 0]} /><meshStandardMaterial color="#8778a5" emissive="#8778a5" emissiveIntensity={simulation ? 0.45 : 0.05} /></mesh>
         <mesh position={[0, 1.18, 0]}><torusGeometry args={[0.65, 0.025, 6, 32]} /><meshBasicMaterial color={cream} transparent opacity={0.6} /></mesh>
@@ -304,18 +311,18 @@ function LivingDetails({ reduced, selected, onGo }: { reduced: boolean } & Pick<
     <>
       {/* A real bed: headboard against the wall, mattress, pillows and folded duvet. */}
       <Inspectable id="bed" selected={selected} onGo={onGo} labelY={2.3}>
-      <group position={[5.5, 0, -2.9]}>
-        {[-1.25, 1.25].flatMap((x) => [-2.2, 2.2].map((z) => <B key={`${x}-${z}`} at={[x, 0.22, z]} size={[0.16, 0.44, 0.16]} color="#8d7157" />))}
-        <B at={[0, 0.42, 0]} size={[3.05, 0.3, 4.85]} color="#b28c64" />
-        <B at={[0, 1.05, -2.4]} size={[3.12, 1.65, 0.18]} color="#b28c64" />
-        <B at={[0, 0.72, 0]} size={[2.9, 0.34, 4.6]} color="#f2ebd8" />
-        <B at={[0, sleeping ? 1.18 : 0.92, 0.6]} size={[2.94, sleeping ? 0.48 : 0.18, 3.35]} color="#789b91" />
-        <B at={[0, sleeping ? 1.4 : 1.03, -0.93]} size={[2.95, 0.14, 0.38]} color="#a6bfb0" />
-        {[-0.73, 0.73].map((x) => <B key={x} at={[x, 0.98, -1.65]} size={[1.18, 0.22, 0.77]} color="#fff0d7" rotation={[0, x * 0.06, 0]} />)}
-        <B at={[0, sleeping ? 1.43 : 1.03, 1.53]} size={[2.98, 0.08, 0.85]} color="#d3ad72" />
+      <group position={[5.25, 0, -2.9]}>
+        {[-1.65, 1.65].flatMap((x) => [-2.2, 2.2].map((z) => <B key={`${x}-${z}`} at={[x, 0.22, z]} size={[0.16, 0.44, 0.16]} color="#8d7157" />))}
+        <B at={[0, 0.42, 0]} size={[3.85, 0.3, 4.85]} color="#b28c64" />
+        <B at={[0, 1.05, -2.4]} size={[3.92, 1.65, 0.18]} color="#b28c64" />
+        <B at={[0, 0.72, 0]} size={[3.7, 0.34, 4.6]} color="#f2ebd8" />
+        <B at={[0, sleeping ? 1.18 : 0.92, 0.6]} size={[3.74, sleeping ? 0.48 : 0.18, 3.35]} color="#789b91" />
+        <B at={[0, sleeping ? 1.4 : 1.03, -0.93]} size={[3.75, 0.14, 0.38]} color="#a6bfb0" />
+        {[-0.95, 0.95].map((x) => <B key={x} at={[x, 0.98, -1.65]} size={[1.55, 0.22, 0.77]} color="#fff0d7" rotation={[0, x * 0.06, 0]} />)}
+        <B at={[0, sleeping ? 1.43 : 1.03, 1.53]} size={[3.78, 0.08, 0.85]} color="#d3ad72" />
       </group>
       </Inspectable>
-      <group position={[3.25, 0, -3.6]}>
+      <group position={[2.55, 0, -3.6]}>
         <B at={[0, 0.5, 0]} size={[1.05, 0.9, 1.05]} color="#b28c64" />
         <B at={[0, 0.97, 0]} size={[1.13, 0.08, 1.13]} color="#c9a677" />
         <B at={[0, 0.61, 0.535]} size={[0.85, 0.42, 0.04]} color="#c9a677" />
@@ -341,8 +348,8 @@ type ObjectProps = { selected: RoomObjectId | null; onGo: (id: RoomObjectId) => 
 
 const obstacles = [
   [-6.65, -2.45, -5.45, -4.05], [-5.6, -4.6, -4.0, -3.05],
-  [-1.61, 2.91, -5.6, -4.3], [3.94, 7.06, -5.4, -0.47],
-  [2.68, 3.82, -4.17, -3.03], [-7.8, -6.85, -1.4, 1.6],
+  [-1.61, 2.91, -5.6, -4.3], [3.29, 7.21, -5.4, -0.47],
+  [1.98, 3.12, -4.17, -3.03], [-7.8, -6.85, -1.4, 1.6],
   [-7.1, -5.25, 3.3, 5.4], [6.3, 7.2, 3.05, 3.95],
 ] as const;
 
@@ -359,6 +366,69 @@ function advance(position: Point, dx: number, dz: number) {
   if (walkable(xOnly)) return xOnly;
   const zOnly = { x: position.x, z: position.z + dz };
   return walkable(zOnly) ? zOnly : position;
+}
+
+function RoomCompanion({ leader, sleeping, paused, reset, reduced }: { leader: React.RefObject<Point>; sleeping: boolean; paused: boolean; reset: number; reduced: boolean }) {
+  const actor = useRef<THREE.Group>(null);
+  const position = useRef<Point>({ x: SPAWN.x - 1.4, z: SPAWN.z });
+  const trail = useRef<Point[]>([]);
+  const lastLeader = useRef<Point>({ ...SPAWN });
+  const motion = useRef<Motion>({ walking: false, phase: 0, gesture: null, time: 0 });
+  const wasSleeping = useRef(false);
+  useEffect(() => {
+    position.current = { x: SPAWN.x - 1.4, z: SPAWN.z };
+    trail.current = [];
+    lastLeader.current = { ...SPAWN };
+    wasSleeping.current = false;
+    motion.current.walking = false;
+    actor.current?.position.set(position.current.x, 0.12, position.current.z);
+    actor.current?.rotation.set(0, 0, 0);
+  }, [reset]);
+  useFrame((_, delta) => {
+    if (!actor.current) return;
+    motion.current.walking = false;
+    if (sleeping) {
+      wasSleeping.current = true;
+      actor.current.position.set(6.2, 1, -2.85);
+      actor.current.rotation.set(-Math.PI / 2, 0, 0);
+      return;
+    }
+    if (wasSleeping.current) {
+      wasSleeping.current = false;
+      position.current = { x: 6.9, z: 0.3 };
+      trail.current = [];
+      lastLeader.current = { ...leader.current };
+      actor.current.position.set(6.9, 0.12, 0.3);
+      actor.current.rotation.set(0, 0, 0);
+    }
+    if (paused) return;
+    // Follow Sam's actual footsteps so furniture corners don't cut across the route.
+    if (Math.hypot(leader.current.x - lastLeader.current.x, leader.current.z - lastLeader.current.z) > 0.1) {
+      trail.current.push({ ...leader.current });
+      lastLeader.current = { ...leader.current };
+    }
+    const target = trail.current[0];
+    if (!target) return;
+    let remaining = Math.hypot(target.x - position.current.x, target.z - position.current.z);
+    for (let i = 1; i < trail.current.length; i++) remaining += Math.hypot(trail.current[i].x - trail.current[i - 1].x, trail.current[i].z - trail.current[i - 1].z);
+    if (remaining <= 1.4) return;
+    const dx = target.x - position.current.x, dz = target.z - position.current.z;
+    const distance = Math.hypot(dx, dz);
+    if (distance < 0.04) { trail.current.shift(); return; }
+    const dt = Math.min(delta, 0.05);
+    const step = Math.min(distance, dt * 2.65, remaining - 1.4);
+    const next = advance(position.current, dx / distance * step, dz / distance * step);
+    motion.current.walking = Math.hypot(next.x - position.current.x, next.z - position.current.z) > 0.0001;
+    if (motion.current.walking) {
+      actor.current.rotation.y = Math.atan2(next.x - position.current.x, next.z - position.current.z);
+      motion.current.phase += dt;
+    }
+    position.current = next;
+    actor.current.position.set(next.x, 0.12, next.z);
+  });
+  return <group ref={actor} position={[SPAWN.x - 1.4, 0.12, SPAWN.z]} scale={PLAYER_SCALE}>
+    <Suspense fallback={<TravellerPlaceholder character="companion" />}><TravellerAvatar character="companion" motion={motion} reduced={reduced} restingHeadLift={sleeping ? PILLOW_HEAD_LIFT : 0} /></Suspense>
+  </group>;
 }
 
 function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, browsing, sleeping, onWake, onNearby, pending, onArrive }: { keys: React.RefObject<Set<string>>; target: Point | null; setTarget: (point: Point | null) => void; reset: number; reduced: boolean; desktopMode: boolean; browsing: boolean; sleeping: boolean; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; pending: RoomObjectId | null; onArrive: (id: RoomObjectId) => void }) {
@@ -391,7 +461,7 @@ function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, brow
       // Lie face-up along the mattress, independently of the island's curled resting pose.
       wasSleeping.current = true;
       motion.current.routine = undefined;
-      actor.current.position.set(4.77, 1.0, -2.85);
+      actor.current.position.set(4.3, 1.0, -2.85);
       actor.current.rotation.set(-Math.PI / 2, 0, 0);
       setTarget(null);
     } else if (wasSleeping.current) {
@@ -456,10 +526,13 @@ function RoomPlayer({ keys, target, setTarget, reset, reduced, desktopMode, brow
     if (near !== previousNear.current) { previousNear.current = near; onNearby(near); }
   });
   return (
+    <>
+    <RoomCompanion leader={position} sleeping={sleeping} paused={desktopMode || browsing} reset={reset} reduced={reduced} />
     <group ref={actor} position={[SPAWN.x, 0.12, SPAWN.z]} visible={!desktopMode}>
       <group scale={PLAYER_SCALE}><Suspense fallback={<TravellerPlaceholder character="sam" />}><TravellerAvatar character="sam" motion={motion} reduced={reduced} restingHeadLift={sleeping ? PILLOW_HEAD_LIFT : 0} /></Suspense></group>
       {sleeping ? <Html center position={[0, 1.8, 0.8]} style={{ pointerEvents: 'none' }}><span className="room-object-label">Z z z</span></Html> : <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}><torusGeometry args={[0.5, 0.025, 6, 32]} /><meshBasicMaterial color="#f4c469" /></mesh>}
     </group>
+    </>
   );
 }
 
@@ -486,6 +559,7 @@ function RoomShell({ simulation, selected, onGo, reduced, desktopMode, onExitDes
       <RobotArm selected={selected} onGo={onGo} simulation={simulation} />
       {selected !== 'robot' && <G1Robot selected={selected} onGo={onGo} simulation={simulation} />}
       <ExitDoor onGo={onGo} />
+      <group position={[-7.77, 0, -2.3]} rotation={[0, Math.PI / 2, 0]}><StudioDoor lab /></group>
       <TravelCorner selected={selected} onGo={onGo} simulation={simulation} />
       <Relic selected={selected} onGo={onGo} simulation={simulation} />
       <LivingDetails reduced={reduced} selected={selected} onGo={onGo} />
@@ -540,7 +614,7 @@ function Camera({ reset, focusDesk, view, reduced, bookIndex, bookFocused }: { r
   return <OrbitControls ref={controls} makeDefault target={[0, 0.8, 0]} minPolarAngle={0.56} maxPolarAngle={1.4} minAzimuthAngle={0.05} maxAzimuthAngle={1.5} minZoom={18} maxZoom={580} enablePan={false} enabled={!focusDesk && !bookFocused} onStart={() => { transition.current = false; }} dampingFactor={0.08} />;
 }
 
-export default function RoomScene({ keys, selected, nearby, onSelect, onWake, onNearby, simulation, desktopMode, onExitDesktop, reset, reducedMotion, view, bookIndex, bookFocused, bookTurn, onBookSelect }: { keys: React.RefObject<Set<string>>; selected: RoomObjectId | null; nearby: RoomObjectId | null; onSelect: (id: RoomObjectId) => void; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; simulation: boolean; desktopMode: boolean; onExitDesktop: () => void; reset: number; reducedMotion: boolean; moving: boolean; view: RoomView; bookIndex: number; bookFocused: boolean; bookTurn: number; onBookSelect: (index: number) => void }) {
+export default function RoomScene({ keys, selected, nearby, onSelect, onWake, onNearby, simulation, desktopMode, onExitDesktop, reset, reducedMotion, view, bookIndex, bookFocused, bookTurn, onBookSelect, onBookClose }: { keys: React.RefObject<Set<string>>; selected: RoomObjectId | null; nearby: RoomObjectId | null; onSelect: (id: RoomObjectId) => void; onWake: () => void; onNearby: (id: RoomObjectId | null) => void; simulation: boolean; desktopMode: boolean; onExitDesktop: () => void; reset: number; reducedMotion: boolean; moving: boolean; view: RoomView; bookIndex: number; bookFocused: boolean; bookTurn: number; onBookSelect: (index: number) => void; onBookClose: () => void }) {
   const [target, setTargetState] = useState<Point | null>(null);
   const [pending, setPending] = useState<RoomObjectId | null>(null);
   const setTarget = useCallback((point: Point | null) => setTargetState(point), []);
@@ -564,8 +638,9 @@ export default function RoomScene({ keys, selected, nearby, onSelect, onWake, on
           <group position={[-7, 1.6, 0.1]} rotation={[0, Math.PI / 2, 0]} scale={0.35}><ShelfWorld selected={bookIndex} onSelect={onBookSelect} turn={bookTurn} reduced={reducedMotion} focused={selected === 'learning' && bookFocused} /></group>
         </Inspectable>
       </Suspense>
+      {bookFocused && selected === 'learning' && <group position={[0, 1.7, 1.2]} rotation={[-0.72, 0, 0]} scale={0.55}><Suspense fallback={null}><ReadingBook key={bookIndex} book={shelfBooks[bookIndex]} index={bookIndex} onClose={onBookClose} onSelect={onBookSelect} /></Suspense></group>}
       {selected === 'robot' && <group position={[2.4, 1.4, -4.95]} scale={0.4}><Suspense fallback={null}><ArenaWorld reduced={reducedMotion} /></Suspense></group>}
-      <RoomPlayer keys={keys} target={target} setTarget={setTarget} reset={reset} reduced={reducedMotion} desktopMode={desktopMode} browsing={selected === 'learning' || selected === 'robot'} sleeping={selected === 'bed'} onWake={onWake} onNearby={onNearby} pending={pending} onArrive={(id) => { setPending(null); onSelect(id); }} />
+      <group visible={view === 'overview'}><RoomPlayer keys={keys} target={target} setTarget={setTarget} reset={reset} reduced={reducedMotion} desktopMode={desktopMode} browsing={selected === 'learning' || selected === 'robot'} sleeping={selected === 'bed'} onWake={onWake} onNearby={onNearby} pending={pending} onArrive={(id) => { setPending(null); onSelect(id); }} /></group>
       {target && <mesh position={[target.x, 0.035, target.z]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.18, 0.23, 32]} /><meshBasicMaterial color={gold} /></mesh>}
       <Camera reset={reset} focusDesk={desktopMode} view={view} reduced={reducedMotion} bookIndex={bookIndex} bookFocused={bookFocused} />
       </NearbyObject.Provider>

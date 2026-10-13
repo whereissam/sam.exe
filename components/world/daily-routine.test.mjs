@@ -85,7 +85,7 @@ test('walking always interrupts sleep, for every step of a long tour', () => {
   // district cannot quietly turn this into a test that walks nowhere.
   for (const goal of districts.map((d) => ({
     x: d.position[0],
-    z: d.position[2] + 1.65,
+    z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65),
   }))) {
     assert.equal(model.goTo(goal), true);
     // Movement alone has to keep them up, with no pending destination to lean on.
