@@ -50,7 +50,7 @@ export const islandObstacles = [
   ...districts.map((d) => ({
     x: d.position[0],
     z: d.position[2],
-    radius: 1.4,
+    radius: d.id === 'robotics' ? 2.45 : 1.4,
   })),
   ...districts.flatMap((d) =>
     islandProps.map((prop) => ({

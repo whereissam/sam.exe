@@ -52,7 +52,7 @@ test('tap routes go around buildings instead of timing out at their front', () =
 test('a tour around all sides keeps both travellers moving safely and eventually idle', () => {
   const model = new Exploration();
   for (const goal of [
-    ...districts.map((d) => ({ x: d.position[0], z: d.position[2] + 1.65 })),
+    ...districts.map((d) => ({ x: d.position[0], z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65) })),
     SPAWN,
   ]) {
     assert.equal(model.goTo(goal), true);
@@ -118,7 +118,7 @@ test('invalid destinations, large frame gaps, and blocked manual movement settle
 test('the expanded garden and every relocated district can be toured without crossing scenery', () => {
   const model = new Exploration();
   const goals = [
-    ...districts.map((d) => ({ x: d.position[0], z: d.position[2] + 1.65 })),
+    ...districts.map((d) => ({ x: d.position[0], z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65) })),
     ...Object.values(GARDEN_SPOTS).map((p) => ({ x: p.x, z: p.z + 0.9 })),
     SPAWN,
   ];

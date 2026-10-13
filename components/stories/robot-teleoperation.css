@@ -1,0 +1,20 @@
+.teleop { margin-top: 28px; border-top: 1px solid #c9b984; padding-top: 22px; }
+.teleop-heading { display: flex; justify-content: space-between; gap: 12px; font-size: 11px; letter-spacing: .12em; margin-bottom: 20px; }
+.teleop-gear { border: 0; padding: 0; margin: 0 0 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.teleop-gear legend { font-size: 13px; margin-bottom: 10px; }
+.teleop button { border: 1px solid #ab9460; background: transparent; color: #443e2c; padding: 11px 13px; font: inherit; font-size: 12px; cursor: pointer; min-height: 44px; }
+.teleop button:hover:not(:disabled) { background: #e3d6a6; }
+.teleop button[aria-pressed="true"] { background: #455c50; color: #fff0c7; border-color: #455c50; }
+.teleop button:focus-visible { outline: 3px solid #a45e3d; outline-offset: 3px; }
+.teleop button:disabled { opacity: .45; cursor: default; }
+.teleop-stage { height: clamp(280px, 45vh, 460px); position: relative; overflow: hidden; background: #bfcfc1; }
+.teleop-orbit { position: absolute; bottom: 12px; left: 14px; font-size: 10px; color: #35443f; pointer-events: none; }
+.teleop-caption { margin: 16px 0; font-size: 18px; line-height: 1.5; }
+.teleop-caption small { font-size: 11px; letter-spacing: .02em; }
+.teleop-actions { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.teleop-playback { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.teleop-playback output { flex-basis: 100%; font-size: 12px; padding-top: 6px; }
+.teleop-explainer { font-size: 13px; line-height: 1.7; margin: 22px 0 0; }
+@media (max-width: 480px) { .teleop-actions { grid-template-columns: repeat(2, 1fr); } .teleop-gear button { flex: 1 1 100%; } .teleop-heading { font-size: 9px; } }
+
+.teleop-actions legend { font-size: 13px; margin-bottom: 10px; }

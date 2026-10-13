@@ -113,3 +113,11 @@ test('buildings and scenery cannot be walked into from any angle', () => {
     );
   }
 });
+
+ test('robot fight exhibit blocks its wider footprint and remains approachable', () => {
+  const lab = districts.find(d => d.id === 'robotics');
+  assert.equal(walkable({ x: lab.position[0] + 2.2, z: lab.position[2] }), false);
+  const approach = { x: lab.position[0], z: lab.position[2] + 2.6 };
+  assert.ok(walkable(approach));
+  assert.equal(nearestDistrict(approach)?.id, 'robotics');
+});

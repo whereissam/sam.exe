@@ -7,9 +7,9 @@ export const districts = [
     color: '#b7f5c4',
     position: [-12, 1.2, -7.8] as [number, number, number],
     description:
-      'Building the bridge between human intention and robotic motion.',
-    technologies: ['ROS 2', 'Unitree', 'MuJoCo', 'Isaac Sim'],
-    note: 'A space for humanoid control, motion capture, and simulation experiments.',
+      'A human moves. A humanoid follows. Exploring robot control through wearable motion capture.',
+    technologies: ['Humanoid robotics', 'PICO', 'Noitom', 'Motion capture'],
+    note: 'I research humanoid robotics and host robot fights. A person wears PICO equipment or a Noitom mocap suit to control the robot through their own movements. Try the interactive demo below.',
   },
   {
     id: 'frontend',

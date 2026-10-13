@@ -1,0 +1,24 @@
+.robot-lab-page { height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr) 360px; grid-template-rows: 64px minmax(0, 1fr); background: #b9cec2; color: #443e2c; }
+.robot-lab-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 10px 22px; border-bottom: 1px solid #97b0a1; }
+.robot-lab-header div { text-align: center; font-size: 13px; }
+.robot-lab-header small { display: block; font-size: 8px; letter-spacing: .18em; margin-top: 5px; }
+.robot-lab-page button, .robot-lab-header a { padding: 10px 12px; min-height: 42px; background: #f4e7b8; border: 1px solid #b4a474; color: #443e2c; font: inherit; font-size: 12px; cursor: pointer; text-decoration: none; }
+.robot-lab-page button[aria-pressed="true"] { background: #475e51; color: #fff1c5; }
+.robot-lab-page button:focus-visible, .robot-lab-header a:focus-visible { outline: 3px solid #a96644; outline-offset: 3px; }
+.robot-lab-page button:disabled { opacity: .45; cursor: default; }
+.robot-lab-world { position: relative; min-height: 0; }
+.lab-views { position: absolute; bottom: 52px; left: 20px; display: flex; gap: 4px; }
+.lab-orbit { position: absolute; bottom: 16px; left: 20px; font-size: 10px; pointer-events: none; }
+.lab-controls { overflow-y: auto; padding: 30px 24px; background: #fff1c5; }
+.lab-controls > small { font-size: 9px; letter-spacing: .15em; }
+.lab-controls h1 { font-size: 30px; line-height: 1.1; margin: 22px 0 18px; }
+.lab-controls p { font-size: 13px; line-height: 1.7; }
+.lab-controls fieldset { border: 0; padding: 0; margin: 24px 0 12px; }
+.lab-controls legend { font-size: 11px; letter-spacing: .06em; margin-bottom: 12px; }
+.lab-pair-choice, .lab-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lab-controls .lab-gear-note { font-size: 11px; }
+.lab-playback { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0 12px; }
+.lab-controls output { display: block; font-size: 11px; min-height: 32px; }
+.lab-controls .lab-footnote { border-top: 1px solid #ccba88; padding-top: 18px; font-size: 10px; }
+.lab-loading { padding: 35px; }
+@media (max-width: 800px) { .robot-lab-page { height: auto; min-height: 100dvh; grid-template-columns: 1fr; grid-template-rows: 64px 60dvh auto; } .robot-lab-header { padding: 8px; gap: 8px; } .robot-lab-header strong { font-size: 11px; } .robot-lab-header small { display: none; } .lab-controls { overflow: visible; } .lab-controls h1 { font-size: 26px; } .lab-views { left: 10px; } .lab-orbit { left: 10px; font-size: 9px; } }

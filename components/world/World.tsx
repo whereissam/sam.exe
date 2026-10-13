@@ -17,6 +17,7 @@ import { districts, type District } from './districts';
 import type { DailyRoutine } from './daily-routine';
 import RenderProbe from '../performance/RenderProbe';
 import { DistrictModel } from './DistrictModel';
+import RoboticsLab from './RoboticsLab';
 import { GroundLabel } from './GroundLabel';
 import { Harbor, ExhibitBack } from './Harbor';
 import { IslandGarden } from './IslandGarden';
@@ -41,6 +42,9 @@ import {
 
 const ReducedMotion = createContext(false);
 type Vec = [number, number, number];
+// Open from the front (+Z), so exhibits face the visitor on arrival and reset.
+const ISLAND_ENTRY_CAMERA: Vec = [0, 22, 30];
+const ISLAND_ENTRY_ZOOM_LEVEL = FITTED_LEVEL + 1;
 function Box({
   position = [0, 0, 0],
   size = [1, 1, 1],
@@ -86,70 +90,6 @@ function Ring({
     </mesh>
   );
 }
-function Robot({ small = false }: { small?: boolean }) {
-  const arms = useRef<THREE.Group>(null);
-  const reduced = useContext(ReducedMotion);
-  useFrame(({ clock }) => {
-    if (arms.current && !reduced)
-      arms.current.rotation.z = Math.sin(clock.elapsedTime * 2) * 0.12;
-  });
-  return (
-    <group scale={small ? 0.45 : 1}>
-      <Box position={[0, 1.2, 0]} size={[0.75, 0.9, 0.48]} color="#c5f3d0" />
-      <Box position={[0, 1.95, 0]} size={[0.9, 0.62, 0.65]} color="#e0e8d5" />
-      <Box
-        position={[0, 1.98, 0.34]}
-        size={[0.68, 0.25, 0.035]}
-        color="#233b45"
-      />
-      {[-0.19, 0.19].map((x) => (
-        <Box
-          key={x}
-          position={[x, 2, 0.37]}
-          size={[0.12, 0.07, 0.025]}
-          color="#92ffce"
-          glow
-        />
-      ))}
-      <Box
-        position={[0, 1.24, 0.25]}
-        size={[0.28, 0.2, 0.03]}
-        color="#76dba5"
-        glow
-      />
-      {[-0.24, 0.24].map((x) => (
-        <group key={x}>
-          <Box
-            position={[x, 0.48, 0]}
-            size={[0.25, 0.6, 0.28]}
-            color="#819bab"
-          />
-          <Box
-            position={[x, 0.16, 0.14]}
-            size={[0.3, 0.22, 0.52]}
-            color="#d3e5ce"
-          />
-        </group>
-      ))}
-      <group ref={arms} position={[0, 1.5, 0]}>
-        {[-0.57, 0.57].map((x) => (
-          <Box
-            key={x}
-            position={[x, -0.15, 0]}
-            size={[0.24, 0.8, 0.27]}
-            color="#b7e2c6"
-          />
-        ))}
-      </group>
-      <Box
-        position={[0.25, 2.4, 0]}
-        size={[0.035, 0.3, 0.035]}
-        color="#b7f5c4"
-        glow
-      />
-    </group>
-  );
-}
 function Installation({
   district,
   onSelect,
@@ -186,6 +126,7 @@ function Installation({
           setHovered(false);
         }}
       >
+        {id === 'robotics' ? <RoboticsLab reduced={reduced} /> : <>
         <ExhibitBack id={id} />
         <DistrictModel id={id}>
           {id === 'photography' && (
@@ -236,26 +177,6 @@ function Installation({
                 <icosahedronGeometry args={[0.55, 1]} />
                 <meshStandardMaterial color="#94c8ca" wireframe />
               </mesh>
-            </group>
-          )}
-          {id === 'robotics' && (
-            <group>
-              <Box
-                position={[0, 0.26, 0]}
-                size={[1.8, 0.28, 1.5]}
-                color="#333747"
-              />
-              <Robot />
-              <Box
-                position={[-1.2, 0.8, -0.6]}
-                size={[0.3, 1.5, 0.3]}
-                color="#748c90"
-              />
-              <Box
-                position={[-0.4, 1.55, -0.6]}
-                size={[1.9, 0.15, 0.25]}
-                color="#9ec0b1"
-              />
             </group>
           )}
           {id === 'frontend' && (
@@ -359,11 +280,12 @@ function Installation({
             </group>
           )}
         </DistrictModel>
+        </>}
       </group>
       <GroundLabel
         title={district.title}
         number={district.number}
-        position={[0, 0.16, 1.45]}
+        position={[0, 0.16, id === 'robotics' ? 1.95 : 1.45]}
         onClick={() => onSelect(district)}
         dark={night}
       />
@@ -378,17 +300,60 @@ function CameraControls({
   benchmarking,
   zoomCommand,
   reduced,
+  playerPosition,
 }: {
   reset: number;
   paused: boolean;
   benchmarking: boolean;
   zoomCommand: ZoomCommand;
   reduced: boolean;
+  playerPosition: React.RefObject<Point>;
 }) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const { get, invalidate, size, gl } = useThree();
+  const following = useRef(false);
+  const interacting = useRef(false);
+  const lastPosition = useRef<Point>({ ...SPAWN });
+  const followGoal = useRef(new THREE.Vector3());
+  const followStep = useRef(new THREE.Vector3());
+  const districtFraming = useRef<{ id: District['id'] | null; aiming: boolean }>({ id: null, aiming: false });
+  const arrivalCamera = useRef(new THREE.Vector3());
+  useFrame((_, dt) => {
+    const p = playerPosition.current;
+    const moved = Math.hypot(p.x - lastPosition.current.x, p.z - lastPosition.current.z) > 0.001;
+    lastPosition.current = { ...p };
+    if (moved) following.current = true;
+    if (!controls.current || !following.current || interacting.current || paused || benchmarking) return;
+    const district = districts.reduce((nearest, candidate) =>
+      Math.hypot(p.x - candidate.position[0], p.z - candidate.position[2]) < Math.hypot(p.x - nearest.position[0], p.z - nearest.position[2]) ? candidate : nearest,
+    );
+    const center = district.position;
+    const distance = Math.hypot(p.x - center[0], p.z - center[2]);
+    if (distance > 6) districtFraming.current.id = null;
+    if (distance < 4.8 && districtFraming.current.id !== district.id) {
+      districtFraming.current = { id: district.id, aiming: true };
+      level.current = 6;
+      targetZoom.current = zoomForLevel(fitted.current, 6);
+    }
+    const focus = Math.max(0, Math.min(1, (5 - distance) / 1.5));
+    followGoal.current.set(p.x + (center[0] - p.x) * focus, harborHeight(p) + 0.6 + focus * 0.4, p.z + (center[2] - p.z) * focus);
+    followStep.current.copy(followGoal.current).sub(controls.current.target).multiplyScalar(reduced ? 1 : 1 - Math.exp(-Math.min(dt, 0.05) * 4));
+    const camera = get().camera;
+    if (followStep.current.lengthSq() < 0.000001 && !districtFraming.current.aiming) return;
+    camera.position.add(followStep.current);
+    controls.current.target.add(followStep.current);
+    if (districtFraming.current.aiming) {
+      // View each district from its front, instead of retaining the
+      // approach angle from a different island or a previous manual orbit.
+      arrivalCamera.current.copy(controls.current.target).add(new THREE.Vector3(4, 7, 12));
+      camera.position.lerp(arrivalCamera.current, reduced ? 1 : 1 - Math.exp(-Math.min(dt, 0.05) * 3));
+      if (camera.position.distanceTo(arrivalCamera.current) < 0.02) districtFraming.current.aiming = false;
+    }
+    controls.current.update();
+    invalidate();
+  });
   const fitted = useRef(1);
-  const level = useRef(FITTED_LEVEL);
+  const level = useRef(ISLAND_ENTRY_ZOOM_LEVEL);
   const targetZoom = useRef(0);
   const zoomAt = useCallback(
     (next: number) => {
@@ -424,19 +389,22 @@ function CameraControls({
   });
   useEffect(() => {
     const camera = get().camera;
-    camera.position.set(17, 18, 23);
+    following.current = false;
+    districtFraming.current = { id: null, aiming: false };
+    lastPosition.current = { ...playerPosition.current };
+    camera.position.set(...ISLAND_ENTRY_CAMERA);
     // The chrome above and below the island is a fixed ~160px on a tall
     // screen, but it folds up on a short one — reserving the full 160 there
     // leaves the island a pinhole and its labels pile on top of each other.
     fitted.current = fittedZoom(size.width, size.height);
-    camera.zoom = zoomForLevel(fitted.current, FITTED_LEVEL);
-    level.current = FITTED_LEVEL;
+    camera.zoom = zoomForLevel(fitted.current, ISLAND_ENTRY_ZOOM_LEVEL);
+    level.current = ISLAND_ENTRY_ZOOM_LEVEL;
     targetZoom.current = camera.zoom;
     camera.updateProjectionMatrix();
     controls.current?.target.set(0, 0, 0);
     controls.current?.update();
     invalidate();
-  }, [get, reset, size.width, size.height, invalidate]);
+  }, [get, reset, size.width, size.height, invalidate, playerPosition]);
   useEffect(() => {
     if (!zoomCommand.direction) return;
     zoomAt(level.current + (zoomCommand.direction > 0 ? 1 : -1));
@@ -490,6 +458,8 @@ function CameraControls({
     <OrbitControls
       ref={controls}
       makeDefault
+      onStart={() => { interacting.current = true; following.current = false; districtFraming.current.aiming = false; }}
+      onEnd={() => { interacting.current = false; }}
       enablePan
       enableZoom={false}
       screenSpacePanning
@@ -707,7 +677,7 @@ export default function World({
       dpr={lowPower ? 1 : [1, 1.7]}
       orthographic
       camera={{
-        position: [12, 12, 16],
+        position: ISLAND_ENTRY_CAMERA,
         zoom: lowPower ? 25 : 52,
         near: 0.1,
         far: 150,
@@ -822,6 +792,7 @@ export default function World({
         paused={paused}
         benchmarking={benchmarking}
         zoomCommand={zoomCommand}
+        playerPosition={playerPosition}
         reduced={reduced}
       />
     </Canvas>
