@@ -2,6 +2,7 @@
 /* oxlint-disable jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- Escape already closes these dialogs through onCancel, so the click handler only adds backdrop dismissal for pointer users. */
 import {
   Component,
+  useCallback,
   lazy,
   Suspense,
   useEffect,
@@ -89,6 +90,7 @@ export default function Home() {
     setZoomCommand((value) => ({ direction, sequence: value.sequence + 1 }));
   }
   const [passportOpen, setPassportOpen] = useState(false);
+  const [roaming, setRoaming] = useState(true);
   const [action, setAction] = useState<Action | null>(null);
   function perform(kind: Gesture) {
     playSound(kind);
@@ -114,6 +116,9 @@ export default function Home() {
     [night, setNight] = useState(false),
     [reset, setReset] = useState(0),
     [reduced, setReduced] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  const [sceneLoaded, setSceneLoaded] = useState(false);
+  const onSceneReady = useCallback(() => setSceneLoaded(true), []);
   const [localTime, setLocalTime] = useState<Date | null>(null);
   // Holds the visitor's remembered choice, or null to follow their local hour.
   const lighting = useRef<Lighting | null>(null);
@@ -207,6 +212,7 @@ export default function Home() {
       !connection?.saveData &&
         !['slow-2g', '2g'].includes(connection?.effectiveType ?? ''),
     );
+    setInitialized(true);
     const visibility = () => {
       setActive(!document.hidden);
       keys.current.clear();
@@ -297,7 +303,7 @@ export default function Home() {
   }, [near, selected, ready, passportOpen]);
   return (
     <main
-      className={`world-page ${night ? 'night' : ''} ${ready ? 'has-world' : 'lite-mode'} ${selected ? 'has-detail' : ''} ${inspecting ? 'is-inspecting' : ''}`}
+      className={`world-page ${night ? 'night' : ''} ${ready || !initialized ? 'has-world' : 'lite-mode'} ${selected ? 'has-detail' : ''} ${inspecting ? 'is-inspecting' : ''}`}
     >
       <header className="masthead">
         <Link href="/" className="brand">
@@ -342,7 +348,12 @@ export default function Home() {
         aria-label="Interactive 3D floating island. Drag to orbit, scroll to zoom, or choose a district below."
       >
         <SceneBoundary>
-          {!ready && (
+          {!initialized && (
+            <output className="scene-fallback">
+              Assembling a small universe…
+            </output>
+          )}
+          {initialized && !ready && (
             <div className="lightweight-entry">
               <span className="entry-kicker">YOUR WORLD, AT YOUR PACE</span>
               <h2>
@@ -365,46 +376,54 @@ export default function Home() {
             </div>
           )}
           {ready && (
-            <Suspense
-              fallback={
-                <div className="scene-fallback">
+            <>
+              <output
+                className={`scene-loading ${sceneLoaded ? 'is-loaded' : ''}`}
+                aria-hidden={sceneLoaded}
+              >
+                <span className="scene-fallback">
                   Assembling a small universe…
-                </div>
-              }
-            >
-              <World
-                onSelect={select}
-                onNear={setNear}
-                keys={keys}
-                paused={!!selected || passportOpen || !active}
-                character={character}
-                onSwitch={setCharacter}
-                onAction={perform}
-                onPassport={() => {
-                  keys.current.clear();
-                  setMoving(false);
-                  setPassportOpen(true);
-                }}
-                onEnterRoom={() => router.push('/room')}
-                visitedCount={visited.length}
-                action={action}
-                lowPower={mobile}
-                moving={moving || benchmarking}
-                benchmarking={benchmarking}
-                perf={perf}
-                collected={collected}
-                onCollect={collectSpark}
-                onPulse={() =>
-                  setNotice('Beacon activated. A little hello to the universe.')
-                }
-                reset={reset}
-                zoomCommand={zoomCommand}
-                night={night}
-                routine={routine}
-                reduced={reduced}
-                touch={touch}
-              />
-            </Suspense>
+                </span>
+              </output>
+              <div className={`scene-reveal ${sceneLoaded ? 'is-loaded' : ''}`}>
+                <Suspense fallback={null}>
+                  <World
+                    roaming={roaming}
+                    onReady={onSceneReady}
+                    onSelect={select}
+                    onNear={setNear}
+                    keys={keys}
+                    paused={!!selected || passportOpen || !active}
+                    character={character}
+                    onSwitch={setCharacter}
+                    onAction={perform}
+                    onPassport={() => {
+                      keys.current.clear();
+                      setMoving(false);
+                      setPassportOpen(true);
+                    }}
+                    onEnterRoom={() => router.push('/room')}
+                    visitedCount={visited.length}
+                    action={action}
+                    lowPower={mobile}
+                    moving={moving || benchmarking}
+                    benchmarking={benchmarking}
+                    perf={perf}
+                    collected={collected}
+                    onCollect={collectSpark}
+                    onPulse={() =>
+                      setNotice('Beacon activated. A little hello to the universe.')
+                    }
+                    reset={reset}
+                    zoomCommand={zoomCommand}
+                    night={night}
+                    routine={routine}
+                    reduced={reduced}
+                    touch={touch}
+                  />
+                </Suspense>
+              </div>
+            </>
           )}
         </SceneBoundary>
       </section>
@@ -447,7 +466,16 @@ export default function Home() {
             })}{' '}
             LOCAL
           </span>
-          <small>{routineLabels[routine]}</small>
+          <small>{roaming && !reduced && routine !== 'sleep' ? 'A little exploring. A little tea.' : routineLabels[routine]}</small>
+          {!reduced && (
+            <button
+              className="roaming-toggle"
+              aria-pressed={roaming}
+              onClick={() => setRoaming((value) => !value)}
+            >
+              {roaming ? 'Pause their day' : 'Let them explore'}
+            </button>
+          )}
         </div>
       )}
       {passportOpen && (
@@ -517,6 +545,7 @@ export default function Home() {
             title="Exit 3D"
             onClick={() => {
               setReady(false);
+              setSceneLoaded(false);
               setInspecting(false);
               setNear(null);
               keys.current.clear();

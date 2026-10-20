@@ -17,12 +17,14 @@ export function CollectibleSparks({
   onCollect,
   paused,
   reduced,
+  allowProximity,
 }: {
   player: RefObject<Point>;
   collected: string[];
   onCollect: (id: string) => void;
   paused: boolean;
   reduced: boolean;
+  allowProximity?: RefObject<boolean>;
 }) {
   const meshes = useRef<(Mesh | null)[]>([]);
   useFrame(({ clock }) => {
@@ -30,6 +32,7 @@ export function CollectibleSparks({
     sparks.forEach((spark, index) => {
       if (collected.includes(spark.id)) return;
       if (
+        (allowProximity?.current ?? true) &&
         Math.hypot(player.current.x - spark.x, player.current.z - spark.z) <
         0.65
       )

@@ -12,6 +12,7 @@ import {
   CLOCK_Z,
 } from './island-layout';
 import { GroundLabel } from './GroundLabel';
+import { OceanBackdrop } from './OceanBackdrop';
 
 type Vec = [number, number, number];
 const colors = [
@@ -545,46 +546,9 @@ export function Harbor({
   reduced: boolean;
   onWalk: (p: { x: number; z: number }) => void;
 }) {
-  const wave = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (wave.current && !paused && !reduced)
-      wave.current.position.x = Math.sin(clock.elapsedTime * 0.2) * 0.18;
-  });
-  const flecks = useMemo(
-    () =>
-      Array.from({ length: 70 }, (_, i) => ({
-        x: Math.sin(i * 12.98) * 24,
-        z: Math.cos(i * 7.71) * 24,
-        width: 0.15 + (i % 5) * 0.12,
-      })),
-    [],
-  );
   return (
     <group>
-      <mesh position={[0, -5.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1000, 1000]} />
-        <meshStandardMaterial
-          color={night ? '#325969' : '#8ccdcc'}
-          roughness={0.48}
-          metalness={0.08}
-        />
-      </mesh>
-      <group ref={wave}>
-        {flecks.map((p, i) => (
-          <mesh
-            key={i}
-            position={[p.x, -5.025, p.z]}
-            rotation={[-Math.PI / 2, 0, 0]}
-          >
-            <planeGeometry args={[p.width, 0.035]} />
-            <meshBasicMaterial
-              color={night ? '#84adb6' : '#dbf3dd'}
-              transparent
-              opacity={0.5}
-            />
-          </mesh>
-        ))}
-      </group>
+      <OceanBackdrop night={night} paused={paused} reduced={reduced} />
       <group
         onClick={(event) => {
           if (

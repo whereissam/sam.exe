@@ -5,6 +5,7 @@ import { harborHeight } from './island-layout';
 import {
   Suspense,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -14,11 +15,12 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { ModelBoundary } from './DistrictModel';
-import { Rest, sleepHeading, type DailyRoutine } from './daily-routine';
+import { Rest, type DailyRoutine } from './daily-routine';
 import manifest from './character-manifest.json';
 import { cameraRelative, nearestDistrict, SPAWN, type Point } from './movement';
 import type { District } from './districts';
 import { Exploration, type Character } from './exploration';
+import { AmbientTour } from './ambient-tour';
 export type { Character } from './exploration';
 
 export type Gesture = 'wave' | 'jump' | 'celebrate';
@@ -31,6 +33,7 @@ export type Motion = {
   seated?: boolean;
   viewing?: boolean;
   routine?: DailyRoutine;
+  teaTime?: number;
 };
 const duration = { wave: 2.2, jump: 0.85, celebrate: 2.5 };
 
@@ -79,11 +82,28 @@ function Avatar({
       m.walking && !reduced ? Math.abs(Math.sin(m.phase * 10)) * 0.035 : 0;
     object.rotation.z = 0;
     if (m.seated) {
-      if (joints.LegL) joints.LegL.rotation.x = -1.15;
-      if (joints.LegR) joints.LegR.rotation.x = -1.15;
+      const atTable = m.teaTime !== undefined || m.routine === 'sleep';
+      if (joints.LegL) joints.LegL.rotation.x = atTable ? -0.85 : -1.15;
+      if (joints.LegR) joints.LegR.rotation.x = atTable ? -0.85 : -1.15;
       if (joints.ArmL) joints.ArmL.rotation.x = -0.72;
       if (joints.ArmR) joints.ArmR.rotation.x = -0.72;
       if (joints.Head) joints.Head.rotation.x = 0.1;
+      if (m.routine === 'sleep') {
+        if (joints.Head) {
+          joints.Head.rotation.x = 0.23;
+          joints.Head.rotation.z = character === 'sam' ? -0.06 : 0.06;
+        }
+        if (joints.ArmL) joints.ArmL.rotation.x = -0.5;
+        if (joints.ArmR) joints.ArmR.rotation.x = -0.5;
+        object.position.y += reduced
+          ? 0
+          : Math.sin(clock.elapsedTime * 1.1) * 0.004;
+      }
+      if (m.teaTime !== undefined) {
+        const sip = Math.max(0, Math.sin(m.teaTime * 0.75));
+        if (joints.ArmR) joints.ArmR.rotation.x = -0.9 - sip * 0.65;
+        if (joints.Head) joints.Head.rotation.x = 0.06 + sip * 0.08;
+      }
     } else if (m.routine === 'sleep') {
       object.rotation.z = -Math.PI / 2;
       object.position.y = 0.18;
@@ -127,6 +147,31 @@ function Avatar({
     }
   });
   return <primitive object={object} dispose={null} scale={0.52} />;
+}
+function TeaCup({ motion }: { motion: RefObject<Motion> }) {
+  const cup = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (!cup.current) return;
+    const sip = Math.max(0, Math.sin((motion.current.teaTime ?? 0) * 0.75));
+    cup.current.position.set(0.2, 0.65 + sip * 0.2, 0.28 - sip * 0.12);
+    cup.current.rotation.x = -sip * 0.2;
+  });
+  return (
+    <group ref={cup}>
+      <mesh>
+        <cylinderGeometry args={[0.055, 0.042, 0.085, 10]} />
+        <meshStandardMaterial color="#f3e6c9" />
+      </mesh>
+      <mesh position={[0, 0.044, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.044, 10]} />
+        <meshBasicMaterial color="#946238" side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[-0.055, 0, 0]}>
+        <torusGeometry args={[0.025, 0.009, 6, 10]} />
+        <meshStandardMaterial color="#f3e6c9" />
+      </mesh>
+    </group>
+  );
 }
 function Placeholder({ character }: { character: Character }) {
   return (
@@ -185,35 +230,6 @@ function RoutineProps({
         </mesh>
       </group>
     );
-  if (routine === 'wander')
-    return (
-      <group position={[0.66, 0, 0.2]}>
-        {/* Something for them to be watching: the head already turns, but with
-         *  nothing beside them that reads as standing perfectly still. */}
-        <mesh position={[0, 0.31, 0]} castShadow>
-          <cylinderGeometry args={[0.07, 0.085, 0.62, 8]} />
-          <meshStandardMaterial color="#8a7a63" />
-        </mesh>
-        <group position={[0, 0.72, 0]} rotation={[0, -0.5, 0]}>
-          <mesh castShadow>
-            <boxGeometry args={[0.15, 0.15, 0.26]} />
-            <meshStandardMaterial color="#f0e6d2" />
-          </mesh>
-          <mesh position={[0, 0.09, 0.12]}>
-            <boxGeometry args={[0.11, 0.11, 0.11]} />
-            <meshStandardMaterial color="#f0e6d2" />
-          </mesh>
-          <mesh position={[0, 0.09, 0.2]}>
-            <boxGeometry args={[0.04, 0.04, 0.07]} />
-            <meshStandardMaterial color="#e4a04b" />
-          </mesh>
-          <mesh position={[0, 0.05, -0.18]} rotation={[0.5, 0, 0]}>
-            <boxGeometry args={[0.11, 0.03, 0.18]} />
-            <meshStandardMaterial color="#c9bda4" />
-          </mesh>
-        </group>
-      </group>
-    );
   if (routine === 'work' || routine === 'relax')
     return (
       <group position={[0, 0.68, 0.3]}>
@@ -235,6 +251,9 @@ function RoutineProps({
 }
 
 export default function Companions({
+  roaming,
+  autonomous,
+  manualMovement,
   keys,
   paused,
   onNear,
@@ -250,6 +269,9 @@ export default function Companions({
   onAction,
   touch = false,
 }: {
+  roaming: boolean;
+  autonomous: RefObject<boolean>;
+  manualMovement: RefObject<boolean>;
   keys: RefObject<Set<string>>;
   paused: boolean;
   onNear: (d: District | null) => void;
@@ -267,6 +289,9 @@ export default function Companions({
   touch?: boolean;
 }) {
   const rest = useRef(new Rest());
+  const tour = useRef(new AmbientTour());
+  const [tourLabel, setTourLabel] = useState<string | null>(null);
+  const lastTourLabel = useRef<string | null>(null);
   const [hovered, setHovered] = useState<Character | null>(null);
   const [emotes, setEmotes] = useState(false);
   const [resting, setResting] = useState(false);
@@ -294,9 +319,12 @@ export default function Companions({
     character: Character;
   } | null>(null);
   const invalidate = useThree((s) => s.invalidate);
-  useEffect(() => {
+  const resetExploration = useEffectEvent(() => {
     setEmotes(false);
     rest.current.interrupt();
+    tour.current.interrupt(exploration.current);
+    tour.current = new AmbientTour();
+    autonomous.current = false;
     exploration.current.reset(character);
     previous.current = null;
     gesture.current = null;
@@ -305,26 +333,57 @@ export default function Companions({
     };
     onNear(null);
     invalidate();
+  });
+  useEffect(() => {
+    resetExploration();
   }, [reset]);
   useEffect(() => {
-    if (target) exploration.current.goTo(target);
-    else exploration.current.cancel();
+    if (target) {
+      tour.current.interrupt(exploration.current);
+      autonomous.current = false;
+      exploration.current.goTo(target);
+    } else exploration.current.cancel();
     invalidate();
-  }, [target]);
-  useEffect(() => {
+  }, [target, invalidate, autonomous]);
+  const switchCharacter = useEffectEvent(() => {
     setEmotes(false);
+    tour.current.interrupt(exploration.current);
+    autonomous.current = false;
     exploration.current.switchTo(character);
     if (target) onArrive();
     invalidate();
-  }, [character]);
+  });
   useEffect(() => {
+    switchCharacter();
+  }, [character]);
+  const triggerAction = useEffectEvent(() => {
     rest.current.interrupt();
-    if (action) gesture.current = { kind: action.kind, time: 0, character };
+    if (action) {
+      tour.current.interrupt(exploration.current);
+      autonomous.current = false;
+      gesture.current = { kind: action.kind, time: 0, character };
+    }
     invalidate();
+  });
+  useEffect(() => {
+    triggerAction();
   }, [action]);
   useEffect(() => {
     invalidate();
-  }, [character, paused, routine]);
+  }, [character, paused, routine, invalidate]);
+  useEffect(() => {
+    if (paused || reduced || !roaming) {
+      tour.current.interrupt(exploration.current);
+      autonomous.current = false;
+      setTourLabel(null);
+      lastTourLabel.current = null;
+      invalidate();
+      return;
+    }
+    // Wake a demand-rendered canvas without keeping it running while idle.
+    const timer = setInterval(invalidate, 500);
+    return () => clearInterval(timer);
+  }, [paused, reduced, roaming, routine, invalidate, autonomous]);
   const inviting = !paused && hovered !== null;
   useEffect(() => {
     if (!inviting) return;
@@ -335,6 +394,7 @@ export default function Companions({
   }, [inviting]);
   useFrame(({ camera }, dt) => {
     if (!sam.current || !companion.current || paused) return;
+    const elapsed = dt;
     dt = Math.min(dt, 0.05);
     const k = keys.current;
     const x =
@@ -347,8 +407,22 @@ export default function Companions({
     const direction =
       x || z ? cameraRelative(x, z, forward.current) : { x: 0, z: 0 };
     const model = exploration.current;
+    tour.current.step(
+      elapsed,
+      model,
+      roaming && !reduced && !emotes && !gesture.current && !target && !x && !z,
+      routine === 'sleep',
+    );
+    autonomous.current = tour.current.active;
+    if (lastTourLabel.current !== tour.current.label) {
+      lastTourLabel.current = tour.current.label;
+      setTourLabel(tour.current.label);
+    }
     const needsFrame = model.step(dt, direction);
-    if (model.walkers[character].walking) playSound('step');
+    manualMovement.current =
+      !autonomous.current && model.walkers[character].walking;
+    if (model.walkers[character].walking && !autonomous.current)
+      playSound('step');
     for (const [id, actor, motion] of [
       ['sam', sam.current, m0.current],
       ['companion', companion.current, m1.current],
@@ -356,12 +430,20 @@ export default function Companions({
       const walker = model.walkers[id];
       actor.position.set(
         walker.position.x,
-        harborHeight(walker.position) + 0.12,
+        harborHeight(walker.position) +
+          0.12 +
+          (['tea', 'sleep'].includes(tour.current.phase) ? -0.08 : 0),
         walker.position.z,
       );
       actor.rotation.y = walker.heading;
       motion.walking = walker.walking;
       motion.phase = walker.phase;
+      motion.seated =
+        tour.current.phase === 'tea' || tour.current.phase === 'sleep';
+      motion.teaTime =
+        tour.current.phase === 'tea'
+          ? tour.current.teaSeconds + (id === 'sam' ? 0 : 2.5)
+          : undefined;
     }
     const p = model.walkers[character].position;
     if (target && !model.destination) onArrive();
@@ -392,29 +474,16 @@ export default function Companions({
       steering: keys.current.size > 0,
       viewing: false,
     });
-    const nextRoutine = rest.current.poseFor(routine);
+    const nextRoutine =
+      tour.current.phase === 'sleep'
+        ? 'sleep'
+        : tour.current.phase === 'visiting'
+          ? 'wander'
+          : routine === 'sleep'
+            ? undefined
+            : rest.current.poseFor(routine);
     if (m0.current.routine !== nextRoutine) invalidate();
     for (const m of [m0.current, m1.current]) m.routine = nextRoutine;
-    if (nextRoutine === 'sleep') {
-      // Lying down uses the walking heading, which points wherever they last
-      // travelled, so without this the two bodies can lie straight through
-      // each other. A shared heading lays them out side by side instead.
-      const heading = sleepHeading(
-        model.walkers.sam.position,
-        model.walkers.companion.position,
-      );
-      if (heading !== null)
-        for (const actor of [sam.current, companion.current]) {
-          const difference = Math.atan2(
-            Math.sin(heading - actor.rotation.y),
-            Math.cos(heading - actor.rotation.y),
-          );
-          if (Math.abs(difference) > 0.01) {
-            actor.rotation.y += difference * Math.min(1, dt * 6);
-            invalidate();
-          } else actor.rotation.y = heading;
-        }
-    }
     if (restingRef.current !== isResting) {
       restingRef.current = isResting;
       setResting(isResting);
@@ -422,12 +491,12 @@ export default function Companions({
     if (!isResting) invalidate();
     positionRef.current.x = p.x;
     positionRef.current.z = p.z;
-    const near = nearestDistrict(p);
+    const near = autonomous.current ? null : nearestDistrict(p);
     if (previous.current !== (near?.id ?? null)) {
       previous.current = near?.id ?? null;
       onNear(near);
     }
-    if (needsFrame) invalidate();
+    if (needsFrame || tour.current.active) invalidate();
   });
   return (
     <>
@@ -439,6 +508,8 @@ export default function Companions({
           onClick={(event) => {
             if (paused || event.delta > 5) return;
             event.stopPropagation();
+            tour.current.interrupt(exploration.current);
+            autonomous.current = false;
             setHovered(null);
             if (character === id) setEmotes((open) => !open);
             else {
@@ -467,7 +538,10 @@ export default function Companions({
               />
             </Suspense>
           </ModelBoundary>
-          {resting && <RoutineProps routine={routine} cloud={id === 'sam'} />}
+          {resting && !tourLabel && routine !== 'sleep' && (
+            <RoutineProps routine={routine} cloud={id === 'sam'} />
+          )}
+          {tourLabel === 'Tea for two' && <TeaCup motion={i === 0 ? m0 : m1} />}
           {character === id && !paused && (
             <Html
               center
@@ -490,11 +564,11 @@ export default function Companions({
                   ))}
                 </div>
               ) : (
-                (hovered === id || touch) && (
+                (hovered === id || touch || tourLabel) && (
                   <span
                     className={`world-hint ${hovered === id ? 'is-near' : ''}`}
                   >
-                    Tap for actions
+                    {tourLabel ?? 'Tap for actions'}
                   </span>
                 )
               )}

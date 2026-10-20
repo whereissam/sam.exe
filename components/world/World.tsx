@@ -1,7 +1,9 @@
 'use client';
 import { harborHeight } from './island-layout';
+import { oceanHorizon } from './OceanBackdrop';
+import { TeaTable } from './TeaTable';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Float, Html, OrbitControls, Sparkles } from '@react-three/drei';
+import { Float, Html, OrbitControls, Sparkles, useProgress } from '@react-three/drei';
 import {
   Suspense,
   type ComponentRef,
@@ -301,6 +303,7 @@ function CameraControls({
   zoomCommand,
   reduced,
   playerPosition,
+  autonomous,
 }: {
   reset: number;
   paused: boolean;
@@ -308,6 +311,7 @@ function CameraControls({
   zoomCommand: ZoomCommand;
   reduced: boolean;
   playerPosition: React.RefObject<Point>;
+  autonomous: React.RefObject<boolean>;
 }) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const { get, invalidate, size, gl } = useThree();
@@ -322,6 +326,7 @@ function CameraControls({
     const p = playerPosition.current;
     const moved = Math.hypot(p.x - lastPosition.current.x, p.z - lastPosition.current.z) > 0.001;
     lastPosition.current = { ...p };
+    if (autonomous.current) { following.current = false; return; }
     if (moved) following.current = true;
     if (!controls.current || !following.current || interacting.current || paused || benchmarking) return;
     const district = districts.reduce((nearest, candidate) =>
@@ -544,11 +549,13 @@ function PassportPost({
 /** A walk-through threshold into the private room, placed on the central island. */
 function RoomPortal({
   player,
+  manualMovement,
   paused,
   onEnter,
   onApproach,
 }: {
   player: React.RefObject<Point>;
+  manualMovement: React.RefObject<boolean>;
   paused: boolean;
   onEnter: () => void;
   onApproach: () => void;
@@ -568,7 +575,7 @@ function RoomPortal({
       wasNear.current = nextNear;
       setNear(nextNear);
     }
-    if (distance < 0.52 && !entered.current) {
+    if (distance < 0.52 && !entered.current && manualMovement.current) {
       entered.current = true;
       onEnter();
     }
@@ -603,7 +610,44 @@ function RoomPortal({
   );
 }
 
+// Wait for the asset manager and a rendered frame, including models that use
+// their own Suspense boundaries and would otherwise reveal an empty island.
+function SceneReady({ onReady }: { onReady?: () => void }) {
+  const active = useProgress((state) => state.active);
+  const invalidate = useThree((state) => state.invalidate);
+  const notified = useRef(false);
+  const frame = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
+  useEffect(() => {
+    invalidate();
+    return () => {
+      if (frame.current !== null) cancelAnimationFrame(frame.current);
+      frame.current = null;
+    };
+  }, [active, invalidate]);
+  useFrame(() => {
+    if (active || notified.current || frame.current !== null) return;
+    frame.current = requestAnimationFrame(() => {
+      frame.current = null;
+      if (useProgress.getState().active) return;
+      notified.current = true;
+      onReady?.();
+    });
+  });
+  return null;
+}
+
+function CanvasFallback({ onReady }: { onReady?: () => void }) {
+  useEffect(() => onReady?.(), [onReady]);
+  return (
+    <div className="scene-fallback">
+      Explore the districts with the chapter buttons below.
+    </div>
+  );
+}
+
 export default function World({
+  roaming = true,
+  onReady,
   onSelect,
   onNear,
   keys,
@@ -629,6 +673,8 @@ export default function World({
   visitedCount,
   touch,
 }: {
+  onReady?: () => void;
+  roaming?: boolean;
   onSelect: (d: District) => void;
   onNear: (d: District | null) => void;
   keys: React.RefObject<Set<string>>;
@@ -656,16 +702,14 @@ export default function World({
 }) {
   const [target, setTarget] = useState<Point | null>(null);
   const playerPosition = useRef<Point>({ ...SPAWN });
+  const autonomous = useRef(false);
+  const manualMovement = useRef(false);
   useEffect(() => {
     setTarget(null);
   }, [reset, paused]);
   return (
     <Canvas
-      fallback={
-        <div className="scene-fallback">
-          Explore the districts with the chapter buttons below.
-        </div>
-      }
+      fallback={<CanvasFallback onReady={onReady} />}
       shadows={!lowPower}
       frameloop={
         paused
@@ -687,6 +731,7 @@ export default function World({
         powerPreference: lowPower ? 'low-power' : 'default',
       }}
     >
+      <color attach="background" args={[night ? oceanHorizon.night : oceanHorizon.day]} />
       {perf && <RenderProbe sampling={benchmarking && !paused} />}
       <ambientLight intensity={night ? 0.65 : 1.2} />
       <hemisphereLight args={['#fff0c3', '#8d7247', 1.6]} />
@@ -703,6 +748,7 @@ export default function World({
         shadow-normalBias={0.04}
       />
       <Suspense fallback={null}>
+        <SceneReady onReady={onReady} />
         <ReducedMotion.Provider value={reduced || lowPower}>
           <group position={[0, -0.8, 0]}>
             <Harbor
@@ -727,6 +773,9 @@ export default function World({
               />
             ))}
             <Companions
+              manualMovement={manualMovement}
+              roaming={roaming && !benchmarking}
+              autonomous={autonomous}
               character={character}
               action={action}
               routine={routine}
@@ -742,6 +791,7 @@ export default function World({
               onAction={onAction}
               touch={touch}
             />
+            <TeaTable />
             <PassportPost
               paused={paused}
               visitedCount={visitedCount}
@@ -750,23 +800,27 @@ export default function World({
             />
             <RoomPortal
               player={playerPosition}
+              manualMovement={manualMovement}
               paused={paused}
               onEnter={onEnterRoom}
               onApproach={() => setTarget({ x: 2.65, z: 1.7 })}
             />
             <CollectibleSparks
+              allowProximity={manualMovement}
               player={playerPosition}
               collected={collected}
               onCollect={onCollect}
               paused={paused}
               reduced={reduced || lowPower}
             />
-            <Beacon
-              paused={paused}
-              reduced={reduced}
-              complete={collected.length === 3}
-              onPulse={onPulse}
-            />
+            <group position={[2, 0, -1]}>
+              <Beacon
+                paused={paused}
+                reduced={reduced}
+                complete={collected.length === 3}
+                onPulse={onPulse}
+              />
+            </group>
             {target && (
               <Ring
                 position={[target.x, harborHeight(target) + 0.13, target.z]}
@@ -793,6 +847,7 @@ export default function World({
         benchmarking={benchmarking}
         zoomCommand={zoomCommand}
         playerPosition={playerPosition}
+        autonomous={autonomous}
         reduced={reduced}
       />
     </Canvas>
