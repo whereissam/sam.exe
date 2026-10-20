@@ -624,6 +624,44 @@ i {
   font-size: 14px;
   line-height: 1.7;
 }
+.scene-loading {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 350ms ease;
+}
+.scene-loading.is-loaded {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 350ms ease, visibility 0s 350ms;
+}
+.scene-loading .scene-fallback {
+  animation: scene-loading-breathe 1.8s ease-in-out infinite;
+}
+.scene-reveal {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 650ms ease;
+}
+.scene-reveal.is-loaded {
+  opacity: 1;
+  pointer-events: auto;
+}
+@keyframes scene-loading-breathe {
+  50% { opacity: 0.45; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-loading,
+  .scene-loading.is-loaded,
+  .scene-reveal {
+    transition: none;
+  }
+  .scene-loading .scene-fallback {
+    animation: none;
+  }
+}
 .world-label {
   white-space: nowrap;
   display: flex;
@@ -3683,6 +3721,23 @@ button {
   font-size: 10px;
   margin-top: 6px;
   color: var(--muted);
+}
+.roaming-toggle {
+  margin-top: 7px;
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.roaming-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
 }
 .has-detail .routine-note,
 .is-inspecting .routine-note {

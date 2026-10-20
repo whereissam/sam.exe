@@ -39,6 +39,11 @@ const BENCH_RADIUS = 0.42;
  *  footprint — walking through a building is what happens otherwise. */
 export const SCENERY_SPREAD = 1.45;
 export const CLOCK_Z = -2.75;
+export const TEA_TABLE = { x: 0, z: 0.4, radius: 0.48 };
+export const TEA_SEATS = {
+  sam: { x: 0.85, z: 0.4 },
+  companion: { x: -0.85, z: 0.4 },
+};
 const islandProps = [
   { x: 0, z: -2, radius: HOUSE_RADIUS },
   { x: 2.05, z: -1.15, radius: TREE_RADIUS },
@@ -47,6 +52,8 @@ const islandProps = [
   { x: -2.35, z: 0.5, radius: BENCH_RADIUS },
 ];
 export const islandObstacles = [
+  TEA_TABLE,
+  { x: 2, z: -1, radius: 0.35 }, // Beacon, beside the tea area.
   ...districts.map((d) => ({
     x: d.position[0],
     z: d.position[2],

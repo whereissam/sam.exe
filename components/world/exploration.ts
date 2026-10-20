@@ -29,6 +29,7 @@ export class Exploration {
   private following: Point[] = [];
   private followGoal: Point | null = null;
   private replanIn = 0;
+  private companionDestination: Point | null = null;
 
   reset(character: Character) {
     this.walkers = {
@@ -52,11 +53,21 @@ export class Exploration {
   cancel() {
     this.destination = null;
     this.route = [];
+    this.companionDestination = null;
   }
-  goTo(destination: Point) {
+  goTo(destination: Point, companionDestination: Point | null = null) {
+    const follower = this.walkers[this.active === 'sam' ? 'companion' : 'sam'];
+    if (
+      companionDestination &&
+      !planRoute(follower.position, companionDestination)
+    )
+      return false;
     const route = planRoute(this.walkers[this.active].position, destination);
     this.route = route ?? [];
     this.destination = route?.length ? { ...destination } : null;
+    this.companionDestination = route ? companionDestination : null;
+    this.replanIn = 0;
+    this.followGoal = null;
     return route !== null;
   }
   step(elapsed: number, direction: Point = { x: 0, z: 0 }) {
@@ -98,16 +109,22 @@ export class Exploration {
       if (!this.route.length) this.destination = null;
     }
     this.replanIn = Math.max(0, this.replanIn - dt);
+    const followTarget = this.companionDestination ?? leader.position;
     const goalMoved =
-      !this.followGoal || distance(this.followGoal, leader.position) > 0.12;
+      !this.followGoal || distance(this.followGoal, followTarget) > 0.12;
     if (this.replanIn === 0 && goalMoved) {
-      this.following = planRoute(follower.position, leader.position) ?? [];
-      this.followGoal = { ...leader.position };
+      this.following = planRoute(follower.position, followTarget) ?? [];
+      this.followGoal = { ...followTarget };
       this.replanIn = 0.25;
     }
     update(
       follower,
-      followRoute(follower.position, this.following, dt * 2.65, FOLLOW_GAP),
+      followRoute(
+        follower.position,
+        this.following,
+        dt * 2.65,
+        this.companionDestination ? 0 : FOLLOW_GAP,
+      ),
     );
     // One final frame settles walking poses; an idle or unreachable route does not spin.
     return (
