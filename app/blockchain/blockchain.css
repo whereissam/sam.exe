@@ -506,7 +506,8 @@
     padding: 5px 10px;
   }
   .chain-world {
-    min-height: 620px;
+    min-height: 520px;
+    height: calc(100dvh - 72px - 120px);
   }
   .chain-room-note {
     top: 14px;
@@ -524,6 +525,13 @@
   .chain-tag {
     padding: 6px 8px;
     font-size: 10px;
+  }
+  /* Phones keep the bubbles, chips and record book; descriptive labels crowd. */
+  .chain-tag.is-label {
+    display: none;
+  }
+  .chain-chip-state {
+    display: none;
   }
   .chain-hud {
     left: 12px;

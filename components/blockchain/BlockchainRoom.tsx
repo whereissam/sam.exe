@@ -542,7 +542,7 @@ export function RoomObjects({
           />
         </group>
         <Box at={[0, 0.76, 0.2]} size={[1.35, 0.04, 0.42]} color="#777a75" />
-        <Tag at={[-0.3, 3.05, -0.3]}>
+        <Tag at={[-0.3, 3.05, -0.3]} className="is-label">
           <span className="chain-tag-title">01 · Payments start here</span>
           <span className="chain-tag-balance">
             Delivered so far <strong>{world.received}</strong> coins
@@ -603,7 +603,11 @@ export function RoomObjects({
                   aria-label={`Checker ${letter(i)} is ${online ? 'awake' : 'unplugged'}. Click to ${online ? 'unplug' : 'plug in'}`}
                   onClick={() => onToggle(i)}
                 >
-                  {letter(i)} · {online ? 'awake' : 'zzz'}
+                  {letter(i)}
+                  <span className="chain-chip-state">
+                    {' '}
+                    · {online ? 'awake' : 'zzz'}
+                  </span>
                 </button>
               </Tag>
               {online && alarm && (
@@ -615,7 +619,10 @@ export function RoomObjects({
             </group>
           );
         })}
-        <Tag at={[3.6, 1.1, 0.3]} className={quorum ? '' : 'is-next'}>
+        <Tag
+          at={[3.6, 1.1, 0.3]}
+          className={`is-label ${quorum ? '' : 'is-next'}`}
+        >
           <span className="chain-tag-title">02 · Checkers</span>
           <span>“Do you really have the money?”</span>
           <span>2 of 3 must say yes · {onlineCount(world)} awake</span>
@@ -626,7 +633,7 @@ export function RoomObjects({
       </group>
 
       {/* 03 · Mempool label */}
-      <Tag at={[5.05, 0.05, 0.55]}>
+      <Tag at={[5.05, 0.05, 0.55]} className="is-label">
         <span className="chain-tag-title">
           03 · Waiting room · {waiting.length}
         </span>
@@ -656,7 +663,7 @@ export function RoomObjects({
             glow={world.sealing}
           />
         </group>
-        <Tag at={[0, 0.05, 1.05]}>
+        <Tag at={[0, 0.05, 1.05]} className="is-label">
           <span className="chain-tag-title">04 · Next ride</span>
           <span>
             {world.sealing
@@ -800,13 +807,20 @@ export function RoomObjects({
     </group>
   );
 }
+/** Corner view on wide screens; a more head-on view keeps the room narrow in portrait. */
 function FitRoom() {
   const { camera, size, invalidate } = useThree();
+  const portrait = size.width < size.height;
   useEffect(() => {
-    camera.zoom = Math.min(78, size.width / 13.5, size.height / 8.5);
+    if (portrait) camera.position.set(4, 12, 17);
+    else camera.position.set(10, 11, 15);
+    camera.lookAt(0, 0.5, 0);
+    camera.zoom = portrait
+      ? Math.min(60, size.width / 12.2)
+      : Math.min(78, size.width / 13.5, size.height / 8.5);
     camera.updateProjectionMatrix();
     invalidate();
-  }, [camera, size.width, size.height, invalidate]);
+  }, [camera, portrait, size.width, size.height, invalidate]);
   return null;
 }
 export default function BlockchainRoom(props: Props) {

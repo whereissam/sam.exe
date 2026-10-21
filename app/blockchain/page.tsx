@@ -197,7 +197,7 @@ export default function BlockchainPage() {
       <header className="chain-header">
         <Link href="/">← Island</Link>
         <div>
-          <span>03 / BLOCKCHAIN HUB</span>
+          <span>03 / MONEY WITHOUT A BANK</span>
           <h1>The trust workshop</h1>
         </div>
         <button onClick={reset}>Reset ↺</button>
@@ -218,9 +218,9 @@ export default function BlockchainPage() {
         </dl>
         <div className="chain-room-note">
           <p>
-            Money that moves
+            Watch it move.
             <br />
-            without a bank.
+            Try to cheat it.
           </p>
           <span className="chain-note-label">
             {paused ? 'Paused' : '● Live'} · Each little person is a payment
