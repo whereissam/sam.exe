@@ -1,10 +1,17 @@
 import type { Point } from './movement';
 
-export type DailyRoutine = 'sleep' | 'stretch' | 'work' | 'wander' | 'relax';
+export type DailyRoutine =
+  | 'sleep'
+  | 'stretch'
+  | 'work'
+  | 'tea'
+  | 'wander'
+  | 'relax';
 export const routineLabels: Record<DailyRoutine, string> = {
   sleep: 'A little nap. Move to wake up.',
   stretch: 'Morning stretches',
-  work: 'Making something small',
+  work: 'Working together at the table',
+  tea: 'Afternoon tea together',
   wander: 'Watching the world go by',
   relax: 'Winding down with a book',
 };
@@ -20,7 +27,8 @@ export const isNightHour = (hour: number) => hour < 7 || hour >= 22;
 export function routineAtHour(hour: number): DailyRoutine {
   if (isNightHour(hour)) return 'sleep';
   if (hour < 11) return 'stretch';
-  if (hour < 17) return 'work';
+  if (hour < 15) return 'work';
+  if (hour < 17) return 'tea';
   if (hour < 21) return 'wander';
   return 'relax';
 }

@@ -18,11 +18,18 @@ for index,name in enumerate(['sam','companion']):
     pivots={}
     for joint,p in {'Body':(cx,0,0),'Head':(cx,0,1.48),'ArmL':(cx-.34,0,1.28),'ArmR':(cx+.34,0,1.28),'LegL':(cx-.17,0,.74),'LegR':(cx+.17,0,.74)}.items():
         bpy.ops.object.empty_add(location=p);pivot=bpy.context.object;pivot.name=joint;pivots[joint]=pivot
+    for side,sign in [('L',-1),('R',1)]:
+        for joint,p in {'Knee'+side:(cx+sign*.17,.015,.44),'Elbow'+side:(cx+sign*.46,-.035,1.02),'Hand'+side:(cx+sign*.46,-.13,.755)}.items():
+            bpy.ops.object.empty_add(location=p);pivot=bpy.context.object;pivot.name=joint;pivots[joint]=pivot
     buckets={key:[] for key in pivots}
     for obj in owned[index]:
         label=obj.name.lower();joint='Body'
-        if any(word in label for word in ['trousers','sneaker','sole']):joint='LegL' if obj.location.x<cx else 'LegR'
-        elif any(word in label for word in ['sleeve','forearm','hand']):joint='ArmL' if obj.location.x<cx else 'ArmR'
+        side='L' if obj.location.x<cx else 'R'
+        if any(word in label for word in ['shin','sneaker','sole']):joint='Knee'+side
+        elif any(word in label for word in ['trousers','thigh']):joint='Leg'+side
+        elif 'hand' in label:joint='Hand'+side
+        elif 'forearm' in label:joint='Elbow'+side
+        elif 'sleeve' in label:joint='Arm'+side
         elif not any(word in label for word in ['shirt','neck','camera','strap']):joint='Head'
         world=obj.matrix_world.copy();obj.parent=pivots[joint];obj.matrix_world=world
         buckets[joint].append(obj)
@@ -35,6 +42,11 @@ for index,name in enumerate(['sam','companion']):
         bpy.context.object.name=joint+'Mesh'
     for pivot in pivots.values():
         pivot.parent=root;pivot.location.x-=cx
+    bpy.context.view_layer.update()
+    for side in ['L','R']:
+        for child,parent in [('Knee','Leg'),('Elbow','Arm'),('Hand','Elbow')]:
+            pivot=pivots[child+side];world=pivot.matrix_world.copy()
+            pivot.parent=pivots[parent+side];pivot.matrix_world=world
     bpy.ops.object.select_all(action='DESELECT');root.select_set(True)
     for obj in root.children_recursive:obj.select_set(True)
     out=ROOT/'assets/blender'/f'{name}-avatar.glb'

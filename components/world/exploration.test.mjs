@@ -52,7 +52,10 @@ test('tap routes go around buildings instead of timing out at their front', () =
 test('a tour around all sides keeps both travellers moving safely and eventually idle', () => {
   const model = new Exploration();
   for (const goal of [
-    ...districts.map((d) => ({ x: d.position[0], z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65) })),
+    ...districts.map((d) => ({
+      x: d.position[0],
+      z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65),
+    })),
     SPAWN,
   ]) {
     assert.equal(model.goTo(goal), true);
@@ -118,7 +121,10 @@ test('invalid destinations, large frame gaps, and blocked manual movement settle
 test('the expanded garden and every relocated district can be toured without crossing scenery', () => {
   const model = new Exploration();
   const goals = [
-    ...districts.map((d) => ({ x: d.position[0], z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65) })),
+    ...districts.map((d) => ({
+      x: d.position[0],
+      z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65),
+    })),
     ...Object.values(GARDEN_SPOTS).map((p) => ({ x: p.x, z: p.z + 0.9 })),
     SPAWN,
   ];
@@ -127,4 +133,41 @@ test('the expanded garden and every relocated district can be toured without cro
     assert.equal(simulate(model), false);
     assert.deepEqual(model.walkers.sam.position, goal);
   }
+});
+
+test('turning back toward the companion makes space without crossing bodies or scenery', () => {
+  const model = new Exploration();
+  for (const direction of [
+    { x: -1, z: 0 },
+    { x: 1, z: 0 },
+    { x: -1, z: 0 },
+  ]) {
+    for (let frame = 0; frame < 70; frame++) {
+      const before = Object.fromEntries(
+        Object.entries(model.walkers).map(([id, w]) => [id, { ...w.position }]),
+      );
+      model.step(1 / 60, direction);
+      const a = model.walkers.sam.position,
+        b = model.walkers.companion.position;
+      assert.ok(
+        Math.hypot(a.x - b.x, a.z - b.z) >= 0.58 - 1e-6,
+        'characters overlapped',
+      );
+      for (const [id, w] of Object.entries(model.walkers)) {
+        assert.ok(
+          clearSegment(before[id], w.position),
+          'avoidance crossed scenery',
+        );
+        assert.ok(
+          Math.hypot(
+            w.position.x - before[id].x,
+            w.position.z - before[id].z,
+          ) <=
+            2.65 / 60 + 1e-6,
+          'avoidance teleported',
+        );
+      }
+    }
+  }
+  assert.equal(simulate(model, 600), false);
 });

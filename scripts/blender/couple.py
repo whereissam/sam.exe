@@ -102,7 +102,12 @@ def create_couple(position=(0, 0, 0), scale=1, explore=False):
         top = 2.18 if index == 0 else 2.13
         for side in [-1, 1]:
             px = x + side*.17
-            rounded(prefix+' trousers', (px, .015, .44), (.25, .3, .63), '#515567' if index == 0 else '#e8dfd2')
+            trouser = '#515567' if index == 0 else '#e8dfd2'
+            if explore:
+                rounded(prefix+' thigh', (px, .015, .585), (.25, .3, .34), trouser, .07)
+                rounded(prefix+' shin', (px, .015, .29), (.235, .28, .32), trouser, .065)
+            else:
+                rounded(prefix+' trousers', (px, .015, .44), (.25, .3, .63), trouser)
             rounded(prefix+' sneaker', (px, -.085, .115), (.29, .48, .2), '#f6ebda', .045)
             rounded(prefix+' sole', (px, -.085, .045), (.3, .49, .065), '#a899b4', .018)
         rounded(prefix+' shirt', (x, 0, 1.05), (.73, .43, .72), shirt, .13)
