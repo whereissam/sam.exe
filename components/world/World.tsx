@@ -1,7 +1,6 @@
 'use client';
-import { harborHeight } from './island-layout';
+import { BEACON_SPOT, harborHeight } from './island-layout';
 import { oceanHorizon } from './OceanBackdrop';
-import { TeaTable } from './TeaTable';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Html, OrbitControls, Sparkles, useProgress } from '@react-three/drei';
 import {
@@ -791,7 +790,6 @@ export default function World({
               onAction={onAction}
               touch={touch}
             />
-            <TeaTable />
             <PassportPost
               paused={paused}
               visitedCount={visitedCount}
@@ -813,7 +811,7 @@ export default function World({
               paused={paused}
               reduced={reduced || lowPower}
             />
-            <group position={[2, 0, -1]}>
+            <group position={[BEACON_SPOT.x, 0, BEACON_SPOT.z]}>
               <Beacon
                 paused={paused}
                 reduced={reduced}

@@ -14,6 +14,9 @@ import {
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { TeaCup } from './TeaCup';
+import { teaPose, placeTeaHand } from './tea-motion';
+import { TeaTable } from './TeaTable';
 import { ModelBoundary } from './DistrictModel';
 import { Rest, type DailyRoutine } from './daily-routine';
 import manifest from './character-manifest.json';
@@ -54,14 +57,26 @@ function Avatar({
     object.traverse((n) => {
       if ((n as THREE.Mesh).isMesh) n.castShadow = true;
     });
+    for (const name of ['HandL', 'HandR']) {
+      object.getObjectByName(name)?.scale.set(0.85, 1, 0.6);
+    }
     return {
       object,
       headDepth: object.getObjectByName('Head')?.position.z ?? 0,
       joints: Object.fromEntries(
-        ['ArmL', 'ArmR', 'LegL', 'LegR', 'Head'].map((name) => [
-          name,
-          object.getObjectByName(name),
-        ]),
+        [
+          'ArmL',
+          'ArmR',
+          'ElbowL',
+          'ElbowR',
+          'HandL',
+          'HandR',
+          'LegL',
+          'LegR',
+          'KneeL',
+          'KneeR',
+          'Head',
+        ].map((name) => [name, object.getObjectByName(name)]),
       ),
     };
   }, [scene]);
@@ -81,10 +96,16 @@ function Avatar({
     object.position.y =
       m.walking && !reduced ? Math.abs(Math.sin(m.phase * 10)) * 0.035 : 0;
     object.rotation.z = 0;
+    object.position.z = 0;
     if (m.seated) {
-      const atTable = m.teaTime !== undefined || m.routine === 'sleep';
-      if (joints.LegL) joints.LegL.rotation.x = atTable ? -0.85 : -1.15;
-      if (joints.LegR) joints.LegR.rotation.x = atTable ? -0.85 : -1.15;
+      const atTable =
+        m.teaTime !== undefined ||
+        m.routine === 'sleep' ||
+        m.routine === 'work';
+      if (joints.LegL) joints.LegL.rotation.x = atTable ? -Math.PI / 2 : -1.15;
+      if (joints.LegR) joints.LegR.rotation.x = atTable ? -Math.PI / 2 : -1.15;
+      if (joints.KneeL) joints.KneeL.rotation.x = atTable ? Math.PI / 2 : 1.15;
+      if (joints.KneeR) joints.KneeR.rotation.x = atTable ? Math.PI / 2 : 1.15;
       if (joints.ArmL) joints.ArmL.rotation.x = -0.72;
       if (joints.ArmR) joints.ArmR.rotation.x = -0.72;
       if (joints.Head) joints.Head.rotation.x = 0.1;
@@ -99,10 +120,44 @@ function Avatar({
           ? 0
           : Math.sin(clock.elapsedTime * 1.1) * 0.004;
       }
+      if (m.routine === 'work' && m.teaTime === undefined) {
+        // Lean over the supported keyboard, with elbows in and palms down.
+        object.position.z = 0.06;
+        for (const side of ['L', 'R']) {
+          const arm = joints['Arm' + side];
+          const elbow = joints['Elbow' + side];
+          const hand = joints['Hand' + side];
+          if (arm) arm.rotation.set(-1.05, 0, side === 'L' ? 0.28 : -0.28);
+          if (elbow) elbow.rotation.x = -0.45;
+          if (hand) hand.rotation.x = -0.05;
+        }
+        if (joints.Head) joints.Head.rotation.x = 0.18;
+      }
       if (m.teaTime !== undefined) {
-        const sip = Math.max(0, Math.sin(m.teaTime * 0.75));
-        if (joints.ArmR) joints.ArmR.rotation.x = -0.9 - sip * 0.65;
-        if (joints.Head) joints.Head.rotation.x = 0.06 + sip * 0.08;
+        // Elbows close to the torso, relaxed palms resting on the thighs.
+        for (const side of ['L', 'R']) {
+          const arm = joints['Arm' + side];
+          const elbow = joints['Elbow' + side];
+          const hand = joints['Hand' + side];
+          if (arm) arm.rotation.set(-0.12, 0, side === 'L' ? 0.52 : -0.52);
+          if (elbow) elbow.rotation.x = -0.6;
+          if (hand) hand.rotation.x = -0.65;
+        }
+        const pose = teaPose(reduced ? 0 : m.teaTime);
+        if (joints.ArmR && joints.ElbowR && joints.HandR)
+          placeTeaHand(
+            joints.ArmR,
+            joints.ElbowR,
+            joints.HandR,
+            pose.hand,
+            pose.grip,
+          );
+        if (joints.Head) {
+          joints.Head.rotation.x = 0.04 + pose.lift * 0.07;
+          joints.Head.rotation.z = reduced
+            ? 0
+            : Math.sin(m.teaTime * 0.65) * 0.025 * (1 - pose.grip);
+        }
       }
     } else if (m.routine === 'sleep') {
       object.rotation.z = -Math.PI / 2;
@@ -117,7 +172,7 @@ function Avatar({
       object.rotation.z = reduced
         ? 0.06
         : Math.sin(clock.elapsedTime * 0.7) * 0.08;
-    } else if (m.routine === 'work' || m.routine === 'relax') {
+    } else if (m.routine === 'relax') {
       if (joints.ArmL) joints.ArmL.rotation.x = -1.1;
       if (joints.ArmR) joints.ArmR.rotation.x = -1.1;
       if (joints.Head) joints.Head.rotation.x = 0.16;
@@ -147,31 +202,6 @@ function Avatar({
     }
   });
   return <primitive object={object} dispose={null} scale={0.52} />;
-}
-function TeaCup({ motion }: { motion: RefObject<Motion> }) {
-  const cup = useRef<THREE.Group>(null);
-  useFrame(() => {
-    if (!cup.current) return;
-    const sip = Math.max(0, Math.sin((motion.current.teaTime ?? 0) * 0.75));
-    cup.current.position.set(0.2, 0.65 + sip * 0.2, 0.28 - sip * 0.12);
-    cup.current.rotation.x = -sip * 0.2;
-  });
-  return (
-    <group ref={cup}>
-      <mesh>
-        <cylinderGeometry args={[0.055, 0.042, 0.085, 10]} />
-        <meshStandardMaterial color="#f3e6c9" />
-      </mesh>
-      <mesh position={[0, 0.044, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.044, 10]} />
-        <meshBasicMaterial color="#946238" side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position={[-0.055, 0, 0]}>
-        <torusGeometry args={[0.025, 0.009, 6, 10]} />
-        <meshStandardMaterial color="#f3e6c9" />
-      </mesh>
-    </group>
-  );
 }
 function Placeholder({ character }: { character: Character }) {
   return (
@@ -230,21 +260,13 @@ function RoutineProps({
         </mesh>
       </group>
     );
-  if (routine === 'work' || routine === 'relax')
+  if (routine === 'relax')
     return (
       <group position={[0, 0.68, 0.3]}>
         <mesh rotation={[-0.3, 0, 0]}>
           <boxGeometry args={[0.36, 0.035, 0.23]} />
-          <meshStandardMaterial
-            color={routine === 'work' ? '#96b9ad' : '#d5a87f'}
-          />
+          <meshStandardMaterial color="#d5a87f" />
         </mesh>
-        {routine === 'work' && (
-          <mesh position={[0, 0.12, 0.1]} rotation={[-0.2, 0, 0]}>
-            <boxGeometry args={[0.36, 0.24, 0.025]} />
-            <meshStandardMaterial color="#65857e" />
-          </mesh>
-        )}
       </group>
     );
   return null;
@@ -319,6 +341,13 @@ export default function Companions({
     character: Character;
   } | null>(null);
   const invalidate = useThree((s) => s.invalidate);
+  const restFrame = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (restFrame.current !== null) clearTimeout(restFrame.current);
+    },
+    [],
+  );
   const resetExploration = useEffectEvent(() => {
     setEmotes(false);
     rest.current.interrupt();
@@ -410,8 +439,18 @@ export default function Companions({
     tour.current.step(
       elapsed,
       model,
-      roaming && !reduced && !emotes && !gesture.current && !target && !x && !z,
+      roaming &&
+        !reduced &&
+        !emotes &&
+        !gesture.current &&
+        !target &&
+        !x &&
+        !z &&
+        routine !== 'stretch' &&
+        routine !== 'relax',
       routine === 'sleep',
+      routine === 'work',
+      routine === 'tea',
     );
     autonomous.current = tour.current.active;
     if (lastTourLabel.current !== tour.current.label) {
@@ -432,17 +471,16 @@ export default function Companions({
         walker.position.x,
         harborHeight(walker.position) +
           0.12 +
-          (['tea', 'sleep'].includes(tour.current.phase) ? -0.08 : 0),
+          (['work', 'tea', 'sleep'].includes(tour.current.phase) ? -0.18 : 0),
         walker.position.z,
       );
       actor.rotation.y = walker.heading;
       motion.walking = walker.walking;
       motion.phase = walker.phase;
-      motion.seated =
-        tour.current.phase === 'tea' || tour.current.phase === 'sleep';
+      motion.seated = ['work', 'tea', 'sleep'].includes(tour.current.phase);
       motion.teaTime =
         tour.current.phase === 'tea'
-          ? tour.current.teaSeconds + (id === 'sam' ? 0 : 2.5)
+          ? tour.current.teaSeconds + (id === 'sam' ? 0 : 9)
           : undefined;
     }
     const p = model.walkers[character].position;
@@ -475,20 +513,23 @@ export default function Companions({
       viewing: false,
     });
     const nextRoutine =
-      tour.current.phase === 'sleep'
-        ? 'sleep'
-        : tour.current.phase === 'visiting'
-          ? 'wander'
-          : routine === 'sleep'
-            ? undefined
-            : rest.current.poseFor(routine);
+      tour.current.phase === 'work'
+        ? 'work'
+        : tour.current.phase === 'sleep'
+          ? 'sleep'
+          : tour.current.phase === 'visiting'
+            ? 'wander'
+            : routine === 'sleep' || routine === 'work'
+              ? undefined
+              : rest.current.poseFor(routine);
     if (m0.current.routine !== nextRoutine) invalidate();
     for (const m of [m0.current, m1.current]) m.routine = nextRoutine;
     if (restingRef.current !== isResting) {
       restingRef.current = isResting;
       setResting(isResting);
     }
-    if (!isResting) invalidate();
+    const seated = ['work', 'tea', 'sleep'].includes(tour.current.phase);
+    if (!isResting && !seated) invalidate();
     positionRef.current.x = p.x;
     positionRef.current.z = p.z;
     const near = autonomous.current ? null : nearestDistrict(p);
@@ -496,10 +537,21 @@ export default function Companions({
       previous.current = near?.id ?? null;
       onNear(near);
     }
-    if (needsFrame || tour.current.active) invalidate();
+    if (seated && !needsFrame) {
+      // Quiet table animations need fewer redraws than direct player movement.
+      if (restFrame.current === null)
+        restFrame.current = setTimeout(() => {
+          restFrame.current = null;
+          invalidate();
+        }, 1000 / 24);
+    } else if (needsFrame || tour.current.active) invalidate();
   });
   return (
     <>
+      <TeaTable
+        working={tourLabel === 'Working together'}
+        tea={tourLabel === 'Tea for two'}
+      />
       {(['sam', 'companion'] as const).map((id, i) => (
         <group
           key={id}
@@ -538,10 +590,10 @@ export default function Companions({
               />
             </Suspense>
           </ModelBoundary>
+          <TeaCup motion={i === 0 ? m0 : m1} reduced={reduced} />
           {resting && !tourLabel && routine !== 'sleep' && (
             <RoutineProps routine={routine} cloud={id === 'sam'} />
           )}
-          {tourLabel === 'Tea for two' && <TeaCup motion={i === 0 ? m0 : m1} />}
           {character === id && !paused && (
             <Html
               center
@@ -575,13 +627,15 @@ export default function Companions({
             </Html>
           )}
           {character === id
-            ? (!resting || routine !== 'sleep') && (
+            ? !tourLabel &&
+              (!resting || routine !== 'sleep') && (
                 <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
                   <torusGeometry args={[0.36, 0.023, 6, 32]} />
                   <meshBasicMaterial color="#b7f5c4" />
                 </mesh>
               )
-            : !paused && (
+            : !paused &&
+              !tourLabel && (
                 <>
                   <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
                     <torusGeometry args={[0.36, 0.018, 6, 32]} />

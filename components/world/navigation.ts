@@ -1,5 +1,5 @@
 import { islandObstacles, harborWaypoints } from './island-layout';
-import { clearSegment, walkable, type Point } from './movement';
+import { clearSegment, walkable, WALK_CLEARANCE, type Point } from './movement';
 
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.z - b.z);
 type Edge = { to: number; distance: number };
@@ -12,7 +12,7 @@ function islandGraph() {
     ...islandObstacles.flatMap((d) =>
       Array.from({ length: 24 }, (_, i) => {
         const angle = (i * Math.PI * 2) / 24,
-          radius = d.radius + 0.055;
+          radius = d.radius + WALK_CLEARANCE + 0.055;
         return {
           x: d.x + Math.cos(angle) * radius,
           z: d.z + Math.sin(angle) * radius,

@@ -2,7 +2,10 @@ import { districts } from './districts';
 import type { Exploration } from './exploration';
 import { TEA_SEATS, TEA_TABLE } from './island-layout';
 
-export const TOUR_IDLE_SECONDS = 8;
+// Give the local-hour activity a full minute before heading to the table.
+export const TOUR_IDLE_SECONDS = 60;
+export const NIGHT_REST_SECONDS = 8;
+export const WORK_SECONDS = 60;
 export const tourStops = [0, 4, 2, 3, 5, 1].map((index) => {
   const district = districts[index];
   return {
@@ -12,20 +15,28 @@ export const tourStops = [0, 4, 2, 3, 5, 1].map((index) => {
       z: district.position[2] + (district.id === 'robotics' ? 2.6 : 1.8),
     },
     lookAt: { x: district.position[0], z: district.position[2] },
-    stay: 9 + (index % 3) * 3,
+    stay: 60 + (index % 3) * 15,
   };
 });
 
 /** A small, interruptible visitor routine. Only routes it owns are cancelled. */
 export class AmbientTour {
-  phase: 'idle' | 'walking' | 'visiting' | 'gathering' | 'tea' | 'sleep' =
-    'idle';
+  phase:
+    | 'idle'
+    | 'walking'
+    | 'visiting'
+    | 'gathering'
+    | 'work'
+    | 'tea'
+    | 'sleep' = 'idle';
   stop = 0;
   private seconds = 0;
   private travelSeconds = 0;
   private teaDue = true;
   private visits = 0;
   private night = false;
+  private working = false;
+  private teaAllowed = true;
 
   get teaSeconds() {
     return this.phase === 'tea' ? this.seconds : 0;
@@ -37,7 +48,12 @@ export class AmbientTour {
   get label() {
     if (!this.active) return null;
     if (this.phase === 'gathering')
-      return this.night ? 'Finding a quiet seat' : 'Meeting for tea';
+      return this.night
+        ? 'Finding a quiet seat'
+        : this.working
+          ? 'Heading to the work table'
+          : 'Meeting for tea';
+    if (this.phase === 'work') return 'Working together';
     if (this.phase === 'sleep') return 'A quiet moment';
     if (this.phase === 'tea') return 'Tea for two';
     return `${this.phase === 'walking' ? 'Off to' : 'Visiting'} ${tourStops[this.stop].title}`;
@@ -45,13 +61,27 @@ export class AmbientTour {
   interrupt(model: Exploration) {
     if (this.active) model.cancel();
     this.phase = 'idle';
+    this.teaDue = true;
     this.seconds = 0;
     this.travelSeconds = 0;
   }
-  step(elapsed: number, model: Exploration, allowed: boolean, night = false) {
-    if (night !== this.night) {
+  step(
+    elapsed: number,
+    model: Exploration,
+    allowed: boolean,
+    night = false,
+    working = false,
+    teaAllowed = true,
+  ) {
+    if (
+      night !== this.night ||
+      working !== this.working ||
+      teaAllowed !== this.teaAllowed
+    ) {
       this.interrupt(model);
       this.night = night;
+      this.working = working;
+      this.teaAllowed = teaAllowed;
       this.teaDue = true;
     }
     if (!allowed) {
@@ -75,7 +105,13 @@ export class AmbientTour {
         );
       });
       if (arrived) {
-        this.phase = this.night ? 'sleep' : 'tea';
+        this.phase = this.night ? 'sleep' : this.working ? 'work' : 'tea';
+        for (const walker of Object.values(model.walkers)) {
+          walker.heading = Math.atan2(
+            TEA_TABLE.x - walker.position.x,
+            TEA_TABLE.z - walker.position.z,
+          );
+        }
         this.seconds = 0;
         this.teaDue = false;
       } else if (this.travelSeconds > 90) {
@@ -101,6 +137,7 @@ export class AmbientTour {
     }
     this.seconds += dt;
     if (
+      this.phase === 'work' ||
       this.phase === 'visiting' ||
       this.phase === 'tea' ||
       this.phase === 'sleep'
@@ -119,19 +156,27 @@ export class AmbientTour {
         );
         walker.heading += turn * Math.min(1, dt * 3);
       }
-      if (this.phase === 'sleep') return;
-      if (
-        this.seconds < (this.phase === 'tea' ? 24 : tourStops[this.stop].stay)
-      )
+      if (this.phase === 'work') {
+        if (this.teaAllowed && this.seconds >= WORK_SECONDS) {
+          this.phase = 'tea';
+          this.seconds = 0;
+        }
         return;
+      }
+      if (this.phase === 'sleep' || this.phase === 'tea') return;
+      if (this.seconds < tourStops[this.stop].stay) return;
       if (this.phase === 'visiting') {
         this.stop = (this.stop + 1) % tourStops.length;
         this.visits++;
         this.teaDue = this.visits % 2 === 0;
       }
-    } else if (this.seconds < TOUR_IDLE_SECONDS) return;
+    } else if (
+      this.seconds <
+      (this.night || this.working ? NIGHT_REST_SECONDS : TOUR_IDLE_SECONDS)
+    )
+      return;
 
-    if (this.teaDue || this.night) {
+    if ((this.teaDue && this.teaAllowed) || this.working || this.night) {
       const other = model.active === 'sam' ? 'companion' : 'sam';
       if (model.goTo(TEA_SEATS[model.active], TEA_SEATS[other])) {
         this.phase = 'gathering';

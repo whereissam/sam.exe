@@ -37,22 +37,13 @@ test('daily routines change at local-time boundaries', () => {
   assert.deepEqual([6, 7, 21, 22].map(isNightHour), [true, false, false, true]);
   assert.deepEqual(
     [7, 10, 11, 16, 17, 20, 21, 21.9].map((h) => routineAtHour(Math.floor(h))),
-    [
-      'stretch',
-      'stretch',
-      'work',
-      'work',
-      'wander',
-      'wander',
-      'relax',
-      'relax',
-    ],
+    ['stretch', 'stretch', 'work', 'tea', 'wander', 'wander', 'relax', 'relax'],
   );
   // Every routine has to be reachable from the clock, or the ones nobody can
   // see may as well not exist.
   assert.deepEqual(
     [...new Set(Array.from({ length: 24 }, (_, h) => routineAtHour(h)))].sort(),
-    ['relax', 'sleep', 'stretch', 'wander', 'work'],
+    ['relax', 'sleep', 'stretch', 'tea', 'wander', 'work'],
   );
 });
 
@@ -205,4 +196,12 @@ test('a remembered lighting choice survives a reload, and junk does not', () => 
   assert.equal(readLighting(null), null);
   for (const junk of ['', 'NIGHT', 'true', '1', '{}', 'dark'])
     assert.equal(readLighting(junk), null, `accepted ${junk}`);
+});
+
+test('afternoon tea ends at five, including six in the evening', () => {
+  assert.equal(routineAtHour(14), 'work');
+  assert.equal(routineAtHour(15), 'tea');
+  assert.equal(routineAtHour(16), 'tea');
+  assert.equal(routineAtHour(17), 'wander');
+  assert.equal(routineAtHour(18), 'wander');
 });

@@ -9,12 +9,15 @@ export type Point = { x: number; z: number };
 export const SPAWN: Point = { x: 0, z: 2 };
 export const ISLAND_RADIUS = ISLAND_WALK_RADIUS;
 export const INSTALLATION_RADIUS = 1.4;
+export const WALK_CLEARANCE = 0.08;
 export function walkable(p: Point) {
   return (
     Number.isFinite(p.x) &&
     Number.isFinite(p.z) &&
     onHarborLand(p) &&
-    !islandObstacles.some((o) => Math.hypot(p.x - o.x, p.z - o.z) < o.radius)
+    !islandObstacles.some(
+      (o) => Math.hypot(p.x - o.x, p.z - o.z) < o.radius + WALK_CLEARANCE,
+    )
   );
 }
 // Routes must remain on an island or bridge for the entire segment.
@@ -31,7 +34,10 @@ export function clearSegment(a: Point, b: Point) {
             0,
             Math.min(1, ((d.x - a.x) * dx + (d.z - a.z) * dz) / lengthSquared),
           );
-    return Math.hypot(a.x + t * dx - d.x, a.z + t * dz - d.z) >= d.radius;
+    return (
+      Math.hypot(a.x + t * dx - d.x, a.z + t * dz - d.z) >=
+      d.radius + WALK_CLEARANCE
+    );
   });
 }
 export function advance(p: Point, delta: Point): Point {

@@ -467,7 +467,7 @@ export default function Home() {
             })}{' '}
             LOCAL
           </span>
-          <small>{roaming && !reduced && routine !== 'sleep' ? 'A little exploring. A little tea.' : routineLabels[routine]}</small>
+          <small>{routineLabels[routine]}</small>
           {!reduced && (
             <button
               className="roaming-toggle"

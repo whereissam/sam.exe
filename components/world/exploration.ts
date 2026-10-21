@@ -16,6 +16,7 @@ const walker = (x: number, z: number): Walker => ({
 });
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.z - b.z);
 const FOLLOW_GAP = 0.85;
+const PERSONAL_SPACE = 0.58;
 
 /** Exploration state is independent of React/render frequency so it can be simulated. */
 export class Exploration {
@@ -94,6 +95,9 @@ export class Exploration {
       }
       actor.position = next;
     };
+    const leaderBefore = { ...leader.position };
+    const routeBefore = this.route.slice();
+    const destinationBefore = this.destination;
     const magnitude = Math.hypot(direction.x, direction.z);
     if (Number.isFinite(magnitude) && magnitude > 0) {
       this.cancel();
@@ -108,6 +112,37 @@ export class Exploration {
       update(leader, followRoute(leader.position, this.route, dt * 2.4));
       if (!this.route.length) this.destination = null;
     }
+    // Reversing toward the companion should make them give way, never pass
+    // through one another. Every avoidance step still respects scenery.
+    if (distance(leader.position, follower.position) < PERSONAL_SPACE) {
+      const dx = follower.position.x - leader.position.x;
+      const dz = follower.position.z - leader.position.z;
+      const length = Math.hypot(dx, dz) || 1;
+      const candidates = [
+        [dx / length, dz / length],
+        [-dz / length, dx / length],
+        [dz / length, -dx / length],
+      ];
+      const next = candidates
+        .map(([x, z]) =>
+          advance(follower.position, { x: x * dt * 2.65, z: z * dt * 2.65 }),
+        )
+        .sort(
+          (a, b) => distance(b, leader.position) - distance(a, leader.position),
+        )[0];
+      update(follower, next);
+      if (distance(leader.position, follower.position) < PERSONAL_SPACE) {
+        leader.position = leaderBefore;
+        leader.walking = false;
+        if (!(magnitude > 0)) {
+          this.route = routeBefore;
+          this.destination = destinationBefore;
+        }
+      }
+      this.followGoal = null;
+      this.replanIn = 0;
+      return true;
+    }
     this.replanIn = Math.max(0, this.replanIn - dt);
     const followTarget = this.companionDestination ?? leader.position;
     const goalMoved =
@@ -117,15 +152,17 @@ export class Exploration {
       this.followGoal = { ...followTarget };
       this.replanIn = 0.25;
     }
-    update(
-      follower,
-      followRoute(
-        follower.position,
-        this.following,
-        dt * 2.65,
-        this.companionDestination ? 0 : FOLLOW_GAP,
-      ),
+    const followingBefore = this.following.slice();
+    const followerNext = followRoute(
+      follower.position,
+      this.following,
+      dt * 2.65,
+      this.companionDestination ? 0 : FOLLOW_GAP,
     );
+    if (distance(followerNext, leader.position) < PERSONAL_SPACE) {
+      this.following = followingBefore;
+      update(follower, follower.position);
+    } else update(follower, followerNext);
     // One final frame settles walking poses; an idle or unreachable route does not spin.
     return (
       wasMoving ||

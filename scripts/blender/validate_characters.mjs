@@ -18,7 +18,20 @@ for (const [name, url] of Object.entries(manifest)) {
   );
   const gltf = await new GLTFLoader().parseAsync(array, '');
   const scene = gltf.scene;
-  for (const joint of ['Head', 'ArmL', 'ArmR', 'LegL', 'LegR', 'Body'])
+  for (const joint of [
+    'Head',
+    'ArmL',
+    'ArmR',
+    'ElbowL',
+    'ElbowR',
+    'HandL',
+    'HandR',
+    'LegL',
+    'LegR',
+    'KneeL',
+    'KneeR',
+    'Body',
+  ])
     assert.ok(scene.getObjectByName(joint), `${name}: missing ${joint}`);
   const size = new Box3().setFromObject(scene).getSize(new Vector3());
   assert.ok(size.y > 2 && size.y < 2.7, `${name}: avatar height ${size.y}`);
@@ -32,6 +45,26 @@ for (const [name, url] of Object.entries(manifest)) {
     after.y > before.y + 0.2,
     `${name}: raised arm must lift above resting pose`,
   );
+  arm.rotation.z = 0;
+  for (const side of ['L', 'R']) {
+    const leg = scene.getObjectByName('Leg' + side);
+    const knee = scene.getObjectByName('Knee' + side);
+    assert.equal(knee.parent, leg, `${name}: knee must follow hip`);
+    assert.equal(
+      scene.getObjectByName('Hand' + side).parent,
+      scene.getObjectByName('Elbow' + side),
+    );
+    leg.rotation.x = -Math.PI / 2;
+    knee.rotation.x = Math.PI / 2;
+    scene.updateMatrixWorld(true);
+    const shin = new Box3().setFromObject(knee).getSize(new Vector3());
+    assert.ok(
+      shin.y > 0.4 && shin.y < 0.6,
+      `${name}: seated shin must remain vertical`,
+    );
+    leg.rotation.x = 0;
+    knee.rotation.x = 0;
+  }
   let triangles = 0,
     primitives = 0;
   scene.traverse((node) => {
@@ -51,7 +84,7 @@ for (const [name, url] of Object.entries(manifest)) {
     triangles,
     primitives,
     height: size.y,
-    articulation: 'raised arm verified',
+    articulation: 'raised arm, seated knees, and hand hierarchy verified',
   };
 }
 await writeFile(
