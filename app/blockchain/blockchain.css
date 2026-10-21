@@ -1,0 +1,552 @@
+.chain-page {
+  --ink: #39372d;
+  --paper: #f6edcf;
+  --line: #cbbd9d;
+  --accent: #536f60;
+  --violet: #6c5977;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: inherit;
+}
+.chain-page button,
+.chain-page a {
+  touch-action: manipulation;
+}
+.chain-page button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 8px 14px;
+  min-height: 40px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+.chain-page button:hover:not(:disabled) {
+  background: #e5d9b9;
+}
+.chain-page button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.chain-page :focus-visible {
+  outline: 3px solid #755a80;
+  outline-offset: 3px;
+}
+.chain-page a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+.chain-header {
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4vw;
+  border-bottom: 1px solid var(--line);
+  gap: 20px;
+}
+.chain-header > a {
+  text-decoration: none;
+  font-size: 14px;
+}
+.chain-header > div {
+  text-align: center;
+}
+.chain-header span {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+.chain-header h1 {
+  font-size: 22px;
+  font-weight: 500;
+  margin: 4px 0 0;
+  letter-spacing: -0.04em;
+}
+.chain-header button {
+  font-size: 12px;
+}
+
+/* The 3D room is the page: it fills everything below the header. */
+.chain-world {
+  flex: none;
+  min-height: 560px;
+  height: calc(100dvh - 72px - 44px);
+  position: relative;
+  background: #a7b5aa;
+  overflow: hidden;
+}
+.chain-room-note {
+  position: absolute;
+  z-index: 6;
+  top: 24px;
+  left: 4vw;
+  pointer-events: none;
+}
+.chain-room-note p {
+  font-size: clamp(20px, 2.1vw, 30px);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  margin: 0 0 14px;
+}
+.chain-note-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.chain-steps,
+.chain-pokes {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.chain-steps {
+  list-style: decimal inside;
+  opacity: 0.8;
+}
+.chain-fees {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 18px;
+  font-size: 11px;
+}
+.chain-fees i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.chain-pokes li::before {
+  content: '○ ';
+}
+.chain-pokes li.is-done {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+.chain-pokes li.is-done::before {
+  content: '● ';
+}
+
+/* In-scene panels rendered through drei <Html>. */
+.chain-tag {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #f6edcff0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px #39372d22;
+  color: var(--ink);
+  font-size: 11px;
+  white-space: nowrap;
+  user-select: none;
+}
+.chain-tag.is-next {
+  border-color: var(--violet);
+  animation: chain-pulse 1.8s ease-in-out infinite;
+}
+@keyframes chain-pulse {
+  50% {
+    box-shadow:
+      0 6px 18px #39372d22,
+      0 0 0 5px #6c597733;
+  }
+}
+.chain-tag-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6a6352;
+}
+.chain-tag-balance strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.chain-tag-row {
+  display: flex;
+  gap: 4px;
+}
+.chain-page .chain-tag button {
+  font-size: 11px;
+  min-height: 30px;
+  min-width: 30px;
+  padding: 4px 8px;
+  background: #fffaea;
+}
+.chain-page .chain-tag button[aria-pressed='true'] {
+  background: var(--violet);
+  border-color: var(--violet);
+  color: #fff5d9;
+}
+.chain-page .chain-tag .chain-go {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff6d9;
+}
+.chain-page .chain-tag .chain-go:hover:not(:disabled) {
+  background: #435c4e;
+}
+.chain-page .chain-tag .chain-close {
+  min-height: 22px;
+  min-width: 22px;
+  padding: 0 6px;
+  background: transparent;
+  border: 0;
+  font-size: 14px;
+}
+/* Power chips above each validator: small enough not to collide. */
+.chain-tag:has(> .chain-chip) {
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.chain-page .chain-tag .chain-chip {
+  min-height: 26px;
+  padding: 2px 9px;
+  border-radius: 13px;
+  background: #f6edcf;
+  font-size: 11px;
+  font-weight: 600;
+}
+.chain-page .chain-tag .chain-chip.is-ok {
+  background: #b7d5a1;
+}
+.chain-page .chain-tag .chain-chip.is-bad {
+  background: #d0705c;
+  color: #fff5d9;
+}
+.chain-page .chain-tag .chain-chip.is-off {
+  background: #95918c;
+  color: #f6edcf;
+}
+.chain-beacon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #6c5977;
+  font-size: 13px;
+  line-height: 1;
+  animation: chain-bob 1.1s ease-in-out infinite;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.chain-beacon span {
+  margin-bottom: 3px;
+  padding: 4px 9px;
+  border-radius: 12px;
+  background: #6c5977;
+  color: #fff5d9;
+  font-size: 11px;
+}
+.chain-tip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: #39372de8;
+  color: #f6edcf;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.chain-tip em {
+  font-style: normal;
+  color: #e8c76f;
+}
+.chain-height {
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #f6edcfe0;
+  font-size: 10px;
+  font-weight: 600;
+}
+.chain-height.is-bad {
+  background: #b77762;
+  color: #fff5d9;
+}
+.chain-txs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.chain-txs li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chain-txs i {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+.chain-bubble {
+  padding: 3px 8px;
+  border-radius: 10px 10px 10px 2px;
+  background: #fffaea;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px #39372d33;
+  animation: chain-pop 0.25s ease-out;
+}
+.chain-bubble.is-ok {
+  background: #b7d5a1;
+}
+.chain-bubble.is-bad {
+  background: #c44b3a;
+  color: #fff5d9;
+}
+.chain-bubble.is-gold {
+  background: #e8c76f;
+}
+@keyframes chain-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+.chain-stripes {
+  display: inline-flex;
+  height: 20px;
+  border-radius: 3px;
+  overflow: hidden;
+  vertical-align: middle;
+}
+.chain-stripes i {
+  width: 15px;
+}
+.chain-seal {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 2px 0;
+}
+.chain-seal dt {
+  color: #776f5d;
+}
+.chain-seal dd {
+  margin: 0;
+  min-height: 14px;
+}
+.chain-valid {
+  color: #4f7a5b;
+  font-weight: 600;
+}
+.chain-score {
+  position: absolute;
+  z-index: 6;
+  top: 24px;
+  right: 4vw;
+  display: flex;
+  gap: 22px;
+  margin: 0;
+  pointer-events: none;
+}
+.chain-score div {
+  text-align: right;
+}
+.chain-score dt {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.chain-score dd {
+  margin: 2px 0 0;
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+.chain-world.is-alarm::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 6px #c44b3a, inset 0 0 120px #c44b3a66;
+  animation: chain-alarm 0.9s ease-in-out infinite;
+}
+@keyframes chain-alarm {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes chain-bob {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.chain-record dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 12px;
+  margin: 0;
+}
+.chain-record dt {
+  color: #776f5d;
+}
+.chain-record dd {
+  margin: 0;
+  font-family: ui-monospace, monospace;
+}
+.chain-invalid {
+  color: #9d452f;
+  font-weight: 600;
+}
+
+/* Status bar floating at the bottom of the room. */
+.chain-hud {
+  position: absolute;
+  z-index: 6;
+  left: 4vw;
+  right: 4vw;
+  bottom: 14px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  pointer-events: none;
+}
+.chain-status-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  max-width: 620px;
+}
+.chain-page .chain-play {
+  pointer-events: auto;
+  min-width: 44px;
+  background: #f6edcfe8;
+  font-size: 12px;
+}
+.chain-status {
+  padding: 10px 14px;
+  background: #f6edcfe8;
+  border-left: 3px solid var(--violet);
+  border-radius: 3px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chain-hud-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+.chain-loading {
+  padding: 40px;
+  text-align: center;
+}
+.chain-footnote {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin: 0;
+  min-height: 44px;
+  padding: 8px 4vw;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #827a68;
+}
+.chain-footnote a {
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: reduce) {
+  .chain-beacon,
+  .chain-bubble,
+  .chain-world.is-alarm::after {
+    animation: none;
+  }
+  .chain-tag.is-next {
+    animation: none;
+    box-shadow: 0 0 0 3px #6c597744;
+  }
+}
+@media (max-width: 700px) {
+  .chain-header {
+    padding: 0 16px;
+    gap: 10px;
+  }
+  .chain-header h1 {
+    font-size: 17px;
+  }
+  .chain-header span {
+    font-size: 8px;
+  }
+  .chain-header button {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+  .chain-world {
+    min-height: 620px;
+  }
+  .chain-room-note {
+    top: 14px;
+    left: 16px;
+  }
+  .chain-room-note p {
+    display: none;
+  }
+  .chain-steps,
+  .chain-pokes,
+  .chain-fees,
+  .chain-note-label {
+    display: none;
+  }
+  .chain-tag {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+  .chain-hud {
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+  }
+  .chain-status {
+    font-size: 12px;
+  }
+  .chain-hud-meta {
+    display: none;
+  }
+  .chain-score {
+    top: 14px;
+    right: 16px;
+  }
+  .chain-score dd {
+    font-size: 22px;
+  }
+  .chain-footnote {
+    flex-direction: column;
+    align-items: start;
+    gap: 6px;
+    padding: 12px 16px;
+  }
+}

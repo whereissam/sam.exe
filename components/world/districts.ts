@@ -31,9 +31,9 @@ export const districts = [
     color: '#d7a0ff',
     position: [12, 2.1, -7.8] as [number, number, number],
     description:
-      'Exploring the intersection of decentralized networks and AI infrastructure.',
+      'Step into the trust workshop: little payments get checked, wait their turn, and ride into a record book nobody can secretly edit.',
     technologies: ['DeFi', 'On-chain data', 'AI infrastructure'],
-    note: 'A home for future project stories about transparent systems and connected infrastructure.',
+    note: 'An interactive room about money without a bank. Unplug a checker, tip someone to the front, or try to cheat the book.',
   },
   {
     id: 'ai',
