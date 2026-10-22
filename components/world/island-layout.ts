@@ -42,8 +42,8 @@ export const CLOCK_Z = -2.75;
 export const BEACON_SPOT = { x: 0.3, z: 2.65, radius: 0.48 };
 export const TEA_TABLE = { x: 0, z: 0.4, radius: 0.7 };
 export const TEA_SEATS = {
-  sam: { x: 0.85, z: 0.4 },
-  companion: { x: -0.85, z: 0.4 },
+  sam: { x: 0.95, z: 0.4 },
+  companion: { x: -0.95, z: 0.4 },
 };
 const islandProps = [
   { x: 0, z: -2, radius: HOUSE_RADIUS },
@@ -53,7 +53,16 @@ const islandProps = [
   { x: -2.35, z: 0.5, radius: BENCH_RADIUS },
 ];
 export const islandObstacles = [
-  TEA_TABLE,
+  // Include the torso radius, not just the table mesh. WALK_CLEARANCE adds
+  // another .08, keeping walking bodies and seated torsos off the tabletop.
+  { ...TEA_TABLE, radius: TEA_TABLE.radius + 0.16 },
+  ...Object.entries(TEA_SEATS).flatMap(([id, seat]) =>
+    [-0.155, 0.155].map((z) => ({
+      x: seat.x + (id === 'sam' ? 0.19 : -0.19),
+      z: seat.z + z,
+      radius: 0.06,
+    })),
+  ),
   BEACON_SPOT,
   ...districts.map((d) => ({
     x: d.position[0],
