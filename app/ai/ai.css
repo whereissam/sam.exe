@@ -1,0 +1,725 @@
+.ai-page {
+  --paper: #f3ecd5;
+  --ink: #373e34;
+  --line: #c6c0a7;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: var(--paper);
+}
+.ai-page button,
+.ai-page select {
+  font: inherit;
+  font-size: 13px;
+  color: inherit;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+}
+.ai-page button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ai-page button:hover:not(:disabled) {
+  background: #e3dfc6;
+}
+.ai-page a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+.ai-page :focus-visible {
+  outline: 3px solid #658577;
+  outline-offset: 4px;
+}
+.ai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  height: 88px;
+  padding: 0 4vw;
+  border-bottom: 1px solid var(--line);
+}
+.ai-header > a {
+  text-decoration: none;
+  font-size: 14px;
+}
+.ai-header > div {
+  text-align: center;
+}
+.ai-header span,
+.ai-kicker,
+.ai-world-title > span {
+  font-size: 10px;
+  letter-spacing: 0.17em;
+}
+.ai-header h1 {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  margin: 6px 0 0;
+}
+.ai-header button {
+  font-size: 12px;
+}
+.ai-world {
+  height: clamp(430px, 58dvh, 740px);
+  background: #a8b9b1;
+  position: relative;
+  overflow: hidden;
+}
+.ai-world-title {
+  position: absolute;
+  left: 4vw;
+  top: 28px;
+  z-index: 2;
+  pointer-events: none;
+}
+.ai-world-title p {
+  font-size: clamp(25px, 2.6vw, 37px);
+  line-height: 1.16;
+  letter-spacing: -0.04em;
+  margin: 15px 0;
+}
+.ai-scene-bottom {
+  position: absolute;
+  bottom: 14px;
+  left: 4vw;
+  right: 4vw;
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 10px;
+  pointer-events: none;
+}
+.ai-scene-label {
+  display: block;
+  white-space: nowrap;
+  padding: 6px 10px;
+  font-size: 10px;
+  background: #f4ecd7e8;
+  border: 1px solid #b6b79b;
+  border-radius: 3px;
+  pointer-events: none;
+}
+.ai-loading {
+  padding: 40px;
+  text-align: center;
+}
+.ai-controls {
+  padding: 0 4vw 22px;
+}
+.ai-mission-bar {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 30px;
+  padding: 23px 0;
+  border-bottom: 1px solid var(--line);
+}
+.ai-mission-bar > div:first-child {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.ai-mission-bar .ai-kicker {
+  grid-column: 1/-1;
+}
+.ai-mission-bar label {
+  font-size: 13px;
+}
+.ai-mission-bar p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ai-mission-bar small {
+  display: block;
+  font-size: 10px;
+  color: #797d69;
+  margin-top: 6px;
+}
+.ai-playback {
+  display: flex;
+  gap: 7px;
+}
+.ai-page .ai-primary {
+  background: #536f60;
+  border-color: #536f60;
+  color: #faf0d5;
+}
+.ai-page .ai-primary:hover:not(:disabled) {
+  background: #425e50;
+}
+.ai-observation {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8vw;
+  padding: 28px 0;
+}
+.ai-observation h2 {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  margin: 12px 0;
+}
+.ai-experiment p {
+  max-width: 480px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #6b715f;
+}
+.ai-experiment button[aria-pressed='true'] {
+  background: #ad7d5d;
+  color: #fff5de;
+  border-color: #ad7d5d;
+}
+.ai-legend {
+  display: flex;
+  gap: 20px;
+  font-size: 10px;
+  margin-top: 20px;
+  color: #797d69;
+}
+.ai-metrics {
+  display: flex;
+  gap: 30px;
+  margin: 15px 0;
+}
+.ai-metrics dt {
+  font-size: 10px;
+  color: #777c69;
+}
+.ai-metrics dd {
+  font-size: 28px;
+  margin: 4px 0 0;
+}
+.ai-decision {
+  display: block;
+  font-size: 13px;
+  line-height: 1.6;
+  border-left: 3px solid #7b9a85;
+  padding: 9px 13px;
+  background: #e6e6cf;
+  min-height: 58px;
+}
+.ai-decision.is-blocked {
+  border-color: #b47d58;
+  background: #eadbc6;
+}
+.ai-page summary {
+  font-size: 12px;
+  cursor: pointer;
+  padding: 12px 0;
+  min-height: 44px;
+}
+.ai-live ol {
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #747865;
+}
+.ai-live li {
+  margin-bottom: 7px;
+}
+.ai-map {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.ai-map p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ai-map-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  max-width: 430px;
+  gap: 4px;
+  margin: 0 0 20px;
+}
+.ai-map-grid button {
+  aspect-ratio: 1;
+  padding: 4px;
+  background: #e4ddc1;
+  min-height: 36px;
+}
+.ai-map-grid button.has-wall {
+  background: #b78063;
+  color: #fff1d2;
+}
+.ai-map-grid button.has-robot {
+  background: #567d70;
+  color: #fff;
+  opacity: 1;
+}
+.ai-map-grid button.has-goal {
+  background: #a8b991;
+  opacity: 1;
+}
+.ai-footer {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+  font-size: 10px;
+  line-height: 1.7;
+  color: #7a7f6d;
+  margin-top: 14px;
+}
+.ai-footer p {
+  flex: 1;
+  max-width: 750px;
+}
+.ai-footer a {
+  white-space: nowrap;
+}
+@media (max-width: 800px) {
+  .ai-header {
+    padding: 0 16px;
+    gap: 12px;
+    height: 80px;
+  }
+  .ai-header h1 {
+    font-size: 17px;
+    max-width: 220px;
+  }
+  .ai-header span {
+    font-size: 8px;
+  }
+  .ai-header button {
+    font-size: 10px;
+    padding: 6px 9px;
+    max-width: 95px;
+  }
+  .ai-world {
+    height: 440px;
+  }
+  .ai-world-title {
+    top: 15px;
+    left: 16px;
+  }
+  .ai-world-title > span {
+    display: none;
+  }
+  .ai-world-title p {
+    font-size: 21px;
+    margin: 0;
+  }
+  .ai-scene-bottom {
+    left: 16px;
+    right: 16px;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 9px;
+  }
+  .ai-controls {
+    padding: 0 16px 20px;
+  }
+  .ai-mission-bar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 20px 0;
+  }
+  .ai-mission-bar p {
+    margin: 0;
+  }
+  .ai-mission-bar > div:first-child {
+    grid-template-columns: auto 1fr;
+  }
+  .ai-observation {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .ai-observation h2 {
+    font-size: 22px;
+  }
+  .ai-legend {
+    gap: 12px;
+  }
+  .ai-footer {
+    flex-wrap: wrap;
+    gap: 10px 25px;
+  }
+  .ai-footer p {
+    flex-basis: 100%;
+    margin: 0;
+  }
+  .ai-scene-label {
+    font-size: 9px;
+    padding: 4px 6px;
+  }
+}
+
+/* The room owns the viewport. The notebook is opened deliberately. */
+.ai-page {
+  position: relative;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background: #a8b9b1;
+}
+.ai-world {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+.ai-navigation {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top));
+  left: 24px;
+  right: 24px;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+.ai-navigation > * {
+  pointer-events: auto;
+  background: #f3ecd5d9;
+  border: 1px solid #c6c0a777;
+  border-radius: 24px;
+  padding: 12px 18px;
+  font-size: 12px;
+  text-decoration: none;
+}
+.ai-controls {
+  position: absolute;
+  right: 18px;
+  top: 78px;
+  bottom: 24px;
+  z-index: 6;
+  width: min(440px, calc(100% - 36px));
+  padding: 20px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #f3ecd5;
+  border: 1px solid #c6c0a7;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px #38483b26;
+}
+.ai-controls-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.ai-controls-heading h1 {
+  font-size: 23px;
+  font-weight: 500;
+  margin: 0;
+}
+.ai-controls-heading button {
+  font-size: 24px;
+}
+.ai-mission-bar {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.ai-observation {
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+.ai-footer {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.ai-footer p {
+  flex-basis: 100%;
+}
+.ai-scene-bottom {
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 20px;
+  right: 20px;
+  justify-content: center;
+  text-align: center;
+  font-size: 12px;
+  color: #35483d;
+  text-shadow: 0 1px 5px #e6ebdd;
+}
+@media (max-width: 600px) {
+  .ai-navigation {
+    left: 14px;
+    right: 14px;
+  }
+  .ai-controls {
+    right: 12px;
+    width: calc(100% - 24px);
+    padding: 18px;
+  }
+  .ai-scene-bottom {
+    font-size: 10px;
+  }
+}
+
+.ai-world {
+  bottom: 180px;
+  height: auto;
+}
+.ai-scene-bottom {
+  bottom: 8px;
+}
+.ai-mission-dock {
+  position: absolute;
+  z-index: 4;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1000px, calc(100% - 40px));
+  padding: 18px 22px;
+  background: #f3ecd5f2;
+  border: 1px solid #c6c0a7;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px #38483b18;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px 24px;
+}
+.ai-dock-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ai-dock-intro strong {
+  font-size: 19px;
+  font-weight: 500;
+}
+.ai-dock-intro > span:last-child {
+  font-size: 12px;
+  color: #687360;
+}
+.ai-destination-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.ai-page .ai-destination-options button {
+  border-radius: 22px;
+  background: #e8e3cc;
+  font-size: 12px;
+  padding: 10px 14px;
+}
+.ai-page button[aria-pressed='true'] {
+  background: #526f60;
+  color: #fff4d7;
+  border-color: #526f60;
+}
+.ai-dock-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ai-dock-actions button {
+  border-radius: 8px;
+}
+.ai-dock-status {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #53644e;
+  align-self: center;
+  max-width: 420px;
+}
+.ai-mission-bar .ai-destination-options {
+  grid-column: 1 / -1;
+}
+.ai-loading-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #a8b9b1;
+  padding: 28px;
+  text-align: center;
+}
+.ai-loading-screen h2 {
+  font-size: 28px;
+  font-weight: 500;
+  margin: 18px 0 4px;
+}
+.ai-loading-screen p {
+  font-size: 14px;
+}
+.ai-loading-screen small {
+  font-size: 12px;
+  max-width: 300px;
+  line-height: 1.7;
+}
+.ai-loading-screen progress {
+  width: 240px;
+  height: 5px;
+  margin: 10px 0 24px;
+  accent-color: #526f60;
+  border: 0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.ai-loading-screen progress::-webkit-progress-bar {
+  background: #d5ddce;
+}
+.ai-loading-screen progress::-webkit-progress-value {
+  background: #526f60;
+}
+@media (max-width: 650px) {
+  .ai-world {
+    bottom: 260px;
+  }
+  .ai-mission-dock {
+    bottom: 10px;
+    width: calc(100% - 20px);
+    padding: 14px;
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+  .ai-dock-intro > span:last-child {
+    display: none;
+  }
+  .ai-dock-intro strong {
+    font-size: 16px;
+  }
+  .ai-destination-options button {
+    flex: 1;
+  }
+  .ai-page .ai-destination-options button {
+    padding: 8px;
+    font-size: 11px;
+  }
+  .ai-dock-status {
+    font-size: 11px;
+  }
+  .ai-scene-bottom {
+    display: none;
+  }
+}
+.ai-destination-options {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+/* Dispatch is a compact tray below the diorama, with the queue always visible. */
+.ai-page {
+  background: #c5d1c7;
+}
+.ai-world {
+  bottom: 240px;
+  background: #c5d1c7;
+}
+.ai-room-identity {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  background: none;
+  border: 0;
+  pointer-events: none;
+}
+.ai-room-identity small {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0;
+  margin-top: 5px;
+  color: #566b5e;
+}
+.ai-mission-dock {
+  gap: 10px 20px;
+  padding: 15px 20px;
+  bottom: 12px;
+}
+.ai-cargo-queue {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 2px 0 7px;
+  scrollbar-width: thin;
+}
+.ai-cargo-queue > button {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  align-items: center;
+  gap: 5px 7px;
+  text-align: left;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 9px 12px;
+  border-radius: 7px;
+  font-size: 11px;
+  background: #e9e3cc;
+}
+.ai-cargo-queue button > span {
+  display: block;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+.ai-cargo-queue small {
+  grid-column: 2;
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  opacity: 0.8;
+}
+.ai-cargo-queue > span {
+  font-size: 12px;
+  padding: 10px 0;
+}
+.ai-notebook-copy {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #61705d;
+}
+.ai-controls h2 {
+  font-size: 19px;
+  font-weight: 500;
+  margin-top: 24px;
+}
+.ai-loading-screen {
+  background: #c5d1c7;
+}
+@media (max-width: 650px) {
+  .ai-world {
+    bottom: 295px;
+  }
+  .ai-mission-dock {
+    gap: 8px;
+    padding: 12px;
+  }
+  .ai-room-identity {
+    display: none;
+  }
+  .ai-dock-intro strong {
+    font-size: 14px;
+  }
+  .ai-dock-actions {
+    gap: 5px;
+  }
+  .ai-dock-actions button {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+}
+@media (max-height: 650px) and (min-width: 651px) {
+  .ai-world {
+    bottom: 180px;
+  }
+  .ai-mission-dock {
+    padding: 10px 16px;
+    gap: 7px 20px;
+  }
+  .ai-dock-intro strong {
+    font-size: 15px;
+  }
+  .ai-dock-status {
+    font-size: 11px;
+  }
+  .ai-cargo-queue button {
+    padding: 5px 10px;
+  }
+  .ai-cargo-queue small {
+    display: none;
+  }
+}
