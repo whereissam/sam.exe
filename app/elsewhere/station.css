@@ -1,0 +1,885 @@
+.station-page {
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  background: #b9c8bd;
+  color: #344d43;
+  font-family: inherit;
+}
+.station-page button,
+.station-page a {
+  font: inherit;
+  color: inherit;
+}
+.station-page button {
+  min-height: 44px;
+  border: 1px solid #c5bba1;
+  border-radius: 8px;
+  padding: 10px 15px;
+  background: #f0e7cc;
+  cursor: pointer;
+  font-size: 12px;
+}
+.station-page button:hover:not(:disabled) {
+  background: #e3d7b6;
+}
+.station-page button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.station-page :focus-visible {
+  outline: 3px solid #7d6a43;
+  outline-offset: 3px;
+}
+.station-nav {
+  position: absolute;
+  z-index: 3;
+  inset: 18px 24px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  pointer-events: none;
+}
+.station-nav a {
+  pointer-events: auto;
+  background: #f0e7ccdf;
+  padding: 12px 18px;
+  border-radius: 24px;
+  text-decoration: none;
+}
+.station-nav > span {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+.station-world {
+  position: absolute;
+  inset: 0 0 240px;
+}
+.station-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  font-size: 15px;
+}
+.station-loading progress {
+  accent-color: #55796b;
+  width: 220px;
+  height: 5px;
+}
+.station-dispatch {
+  position: absolute;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(940px, calc(100% - 32px));
+  padding: 18px 22px;
+  background: #f3ecd5f5;
+  border: 1px solid #d1c5a6;
+  border-radius: 18px;
+  box-shadow: 0 8px 28px #344d4315;
+}
+.station-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.station-heading small,
+.station-journal > small {
+  font-size: 9px;
+  letter-spacing: 0.17em;
+}
+.station-heading h1 {
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  margin: 4px 0 12px;
+}
+.station-stamps {
+  font-size: 11px;
+  border: 1px dashed #9a9f80;
+  padding: 8px 12px;
+  border-radius: 50%;
+}
+.station-destinations {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.station-destinations button {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-align: left;
+  background: #e7e0c7;
+}
+.station-destinations small {
+  font-size: 9px;
+  opacity: 0.6;
+}
+.station-destinations span {
+  margin-left: auto;
+}
+.station-destinations button[aria-pressed='true'],
+.station-page .station-primary {
+  background: #496b5e;
+  color: #fff0cf;
+  border-color: #496b5e;
+}
+.station-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.station-actions output {
+  font-size: 11px;
+  line-height: 1.6;
+  margin-left: auto;
+  max-width: 350px;
+}
+.station-demo {
+  font-size: 9px;
+  line-height: 1.4;
+  color: #7e806c;
+  margin: 10px 0 0;
+}
+.station-journal {
+  position: absolute;
+  z-index: 4;
+  top: 75px;
+  right: 18px;
+  bottom: 18px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  width: min(440px, calc(100% - 36px));
+  padding: 24px;
+  background: #f3ecd5;
+  border: 1px solid #c5bba1;
+  border-radius: 10px;
+  box-shadow: 0 12px 40px #344d4326;
+}
+.station-journal header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  font-size: 11px;
+}
+.station-journal header button {
+  font-size: 23px;
+}
+.station-journal h2 {
+  font-size: 38px;
+  font-weight: 500;
+  margin: 10px 0;
+}
+.station-journal h3 {
+  font-size: 19px;
+  font-weight: 500;
+}
+.station-journal p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #68735f;
+}
+.station-journal figure {
+  margin: 20px 0;
+}
+.station-journal img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 330px;
+  object-fit: contain;
+  background: #e5ddc4;
+  border: 9px solid #e5ddc4;
+}
+.station-journal figcaption {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.station-journal figcaption span {
+  display: block;
+  font-size: 10px;
+  color: #717b67;
+}
+.station-journal > a {
+  font-size: 12px;
+}
+@media (max-width: 650px) {
+  .station-world {
+    bottom: 320px;
+  }
+  .station-nav {
+    inset: 12px 12px auto;
+  }
+  .station-nav > span {
+    display: none;
+  }
+  .station-dispatch {
+    padding: 14px;
+    width: calc(100% - 20px);
+  }
+  .station-heading h1 {
+    font-size: 20px;
+  }
+  .station-destinations {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .station-destinations button {
+    padding: 8px 12px;
+  }
+  .station-actions {
+    flex-wrap: wrap;
+  }
+  .station-actions output {
+    flex-basis: 100%;
+    margin: 0;
+    max-width: none;
+  }
+  .station-stamps {
+    font-size: 9px;
+  }
+  .station-demo {
+    font-size: 8px;
+  }
+}
+@media (max-height: 650px) and (min-width: 651px) {
+  .station-world {
+    bottom: 200px;
+  }
+  .station-dispatch {
+    padding: 12px 18px;
+  }
+  .station-heading h1 {
+    font-size: 18px;
+  }
+  .station-demo {
+    margin-top: 5px;
+  }
+}
+/* The playable world occupies the screen; the HUD only reports inventory and nearby actions. */
+.station-world {
+  inset: 0 0 110px;
+}
+.station-inventory {
+  position: absolute;
+  top: 76px;
+  left: 22px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.station-inventory span {
+  padding: 8px 12px;
+  border: 1px solid #acbba6;
+  background: #d7dfcfdc;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #7c8778;
+}
+.station-inventory .is-owned {
+  background: #f1e6c8;
+  color: #355c49;
+  border-color: #b1a37f;
+}
+.station-playbar {
+  position: absolute;
+  z-index: 3;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1000px, calc(100% - 32px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: #f3ecd5f0;
+  border: 1px solid #c9bea0;
+}
+.station-playbar small {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+}
+.station-playbar output {
+  display: block;
+  font-size: 14px;
+  margin: 5px 0;
+}
+.station-playbar p {
+  font-size: 10px;
+  margin: 0;
+  color: #7c816c;
+}
+.station-playbar button {
+  flex-shrink: 0;
+}
+.station-journal {
+  margin: 0 0 0 auto;
+  color: #344d43;
+  height: calc(100dvh - 95px);
+  max-height: calc(100dvh - 95px);
+}
+@media (max-width: 650px) {
+  .station-world {
+    bottom: 150px;
+  }
+  .station-inventory {
+    top: 65px;
+    left: 12px;
+    right: 12px;
+    flex-direction: row;
+    gap: 5px;
+  }
+  .station-inventory span {
+    font-size: 9px;
+    padding: 6px 8px;
+  }
+  .station-playbar {
+    padding: 12px;
+    gap: 10px;
+    align-items: stretch;
+    flex-direction: column;
+    bottom: 10px;
+  }
+  .station-playbar output {
+    font-size: 12px;
+  }
+  .station-playbar p {
+    font-size: 9px;
+  }
+  .station-playbar button {
+    min-height: 40px;
+  }
+  .station-nav button {
+    font-size: 10px;
+  }
+}
+
+.station-hold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #496659;
+  min-width: 220px;
+  touch-action: none;
+  user-select: none;
+}
+.station-hold:focus-visible {
+  outline: 3px solid #b79a62;
+  outline-offset: 4px;
+}
+
+.station-hold-ring {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+}
+.station-hold-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.station-hold-ring circle {
+  fill: none;
+  stroke-width: 2.5;
+}
+.station-hold-track {
+  stroke: rgb(255 255 255 / 22%);
+}
+.station-hold-fill {
+  stroke: #f4e6bd;
+  stroke-linecap: round;
+}
+.station-hold-ring > span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+}
+.station-destination-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  border-left: 1px solid #bcb59a;
+}
+.station-destination-hint strong {
+  font-size: 13px;
+}
+.station-destination-hint span {
+  font-size: 11px;
+  color: #637466;
+}
+.station-auto-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.station-view-switch {
+  position: absolute;
+  top: 78px;
+  right: 24px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #f3ecd5f5;
+  border: 1px solid #c9bea0;
+  border-radius: 10px;
+  font-size: 12px;
+}
+.station-nav button {
+  pointer-events: auto;
+}
+@media (max-width: 650px) {
+  .station-view-switch {
+    top: 115px;
+    right: 12px;
+    font-size: 10px;
+  }
+}
+
+/* Touch layout uses actual rows, so status changes cannot cover the world. */
+.station-page,
+.station-page * {
+  box-sizing: border-box;
+}
+.station-scene-tools {
+  position: absolute;
+  top: 82px;
+  right: 24px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+}
+.station-world canvas {
+  touch-action: none;
+}
+.station-touch-help {
+  display: none;
+}
+.station-city-picker {
+  position: absolute;
+  top: 140px;
+  right: 24px;
+  z-index: 6;
+  width: min(340px, calc(100% - 24px));
+  max-height: calc(100% - 150px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  background: #f3ecd5;
+  color: #344d43;
+  border: 1px solid #b8ac8f;
+  border-radius: 12px;
+}
+.station-city-picker header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.station-city-picker p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.station-city-picker > div {
+  display: grid;
+  gap: 8px;
+}
+.station-city-picker > div button {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  gap: 12px;
+}
+.station-city-picker small {
+  color: #5d7465;
+}
+@media (pointer: coarse) {
+  .station-touch-help {
+    display: inline;
+  }
+  .station-desktop-help {
+    display: none;
+  }
+  .station-page button {
+    touch-action: manipulation;
+  }
+  .station-page .station-hold {
+    touch-action: none;
+  }
+}
+@media (max-width: 700px), (max-height: 500px) and (pointer: coarse) {
+  .station-page {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    height: 100dvh;
+    min-height: 0;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overscroll-behavior: none;
+  }
+  .station-nav {
+    position: relative;
+    inset: auto;
+    grid-row: 1;
+    display: flex;
+    gap: 5px;
+    padding: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+  .station-nav > span {
+    display: none;
+  }
+  .station-nav a,
+  .station-nav button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px 5px;
+    font-size: 11px;
+    white-space: nowrap;
+    border-radius: 8px;
+  }
+  .station-inventory {
+    position: relative;
+    inset: auto;
+    grid-row: 2;
+    flex-direction: row;
+    gap: 5px;
+    padding: 0 8px 6px;
+    min-width: 0;
+  }
+  .station-inventory span {
+    padding: 5px 7px;
+    font-size: 10px;
+    min-width: 0;
+    line-height: 1.4;
+  }
+  .station-world {
+    position: relative;
+    inset: auto;
+    grid-row: 3;
+    min-height: 0;
+    overflow: hidden;
+  }
+  .station-scene-tools {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    justify-content: flex-end;
+  }
+  .station-scene-tools button {
+    min-height: 44px;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+  .station-playbar {
+    position: relative;
+    inset: auto;
+    transform: none;
+    grid-row: 4;
+    width: auto;
+    margin: 6px 8px 8px;
+    padding: 10px 12px;
+    max-height: 34dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .station-playbar output {
+    font-size: 13px;
+    line-height: 1.45;
+    margin: 4px 0;
+    overflow-wrap: anywhere;
+  }
+  .station-playbar p {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .station-playbar button {
+    min-height: 44px;
+  }
+  .station-hold {
+    min-width: 0;
+    width: 100%;
+    padding: 6px 12px !important;
+  }
+  .station-auto-controls {
+    width: 100%;
+  }
+  .station-auto-controls button {
+    flex: 1;
+  }
+  .station-destination-hint {
+    border-left: 0;
+    padding: 0;
+    gap: 4px;
+  }
+  .station-destination-hint span {
+    display: none;
+  }
+  .station-city-picker {
+    top: 60px;
+    right: 8px;
+    width: calc(100% - 16px);
+    max-height: calc(100% - 68px);
+    padding: 12px;
+  }
+  .station-journal {
+    position: absolute;
+    z-index: 8;
+    inset: max(8px, env(safe-area-inset-top)) 8px
+      max(8px, env(safe-area-inset-bottom));
+    width: calc(100% - 16px);
+    height: auto;
+    max-height: none;
+    margin: 0;
+    padding: 16px;
+  }
+  .station-journal header {
+    position: sticky;
+    top: -16px;
+    background: #f3ecd5;
+    padding: 8px 0;
+    z-index: 1;
+  }
+  .station-journal header button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+@media (max-height: 500px) and (pointer: coarse) {
+  .station-nav {
+    padding: 4px 8px;
+  }
+  .station-inventory {
+    padding-bottom: 2px;
+  }
+  .station-inventory span {
+    padding: 2px 7px;
+  }
+  .station-playbar {
+    flex-direction: row;
+    align-items: center;
+    padding: 7px 10px;
+    margin-top: 2px;
+    gap: 12px;
+  }
+  .station-playbar > div:first-child {
+    flex: 1;
+    min-width: 0;
+  }
+  .station-playbar > button,
+  .station-auto-controls {
+    width: auto;
+    flex: 0 0 auto;
+    max-width: 45%;
+  }
+  .station-playbar output {
+    font-size: 12px;
+    margin: 2px 0;
+  }
+  .station-scene-tools {
+    top: 4px;
+  }
+  .station-city-picker {
+    top: 4px;
+    max-height: calc(100% - 8px);
+  }
+}
+.station-city-picker header {
+  position: sticky;
+  top: -16px;
+  background: #f3ecd5;
+  z-index: 1;
+}
+@media (max-width: 700px) {
+  .station-city-picker header {
+    top: -12px;
+  }
+}
+.station-location {
+  padding: 10px 12px;
+  background: #f3ecd5;
+  color: #344d43;
+  border: 1px solid #c9bea0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.station-location small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 4px;
+}
+@media (max-width: 700px), (max-height: 500px) and (pointer: coarse) {
+  .station-inventory {
+    flex-wrap: wrap;
+  }
+  .station-location {
+    flex-basis: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .station-location small {
+    display: inline;
+    margin-left: 8px;
+    font-size: 9px;
+  }
+}
+.station-menu-toggle,
+.station-menu-extra {
+  display: none;
+}
+@media (max-width: 700px), (max-height: 500px) and (pointer: coarse) {
+  .station-nav {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .station-nav a,
+  .station-nav .station-menu-toggle {
+    flex: 0 0 auto;
+    min-width: 72px;
+    padding: 8px 14px;
+  }
+  .station-nav .station-menu-toggle {
+    display: flex;
+    margin-left: auto;
+  }
+  .station-nav .station-menu-action {
+    display: none;
+  }
+  .station-page[data-menu-open='true'] .station-nav .station-menu-action {
+    display: flex;
+    flex: 1 1 calc(50% - 6px);
+  }
+  .station-inventory > span {
+    display: none;
+  }
+  .station-page[data-menu-open='true'] .station-inventory > span {
+    display: block;
+  }
+  .station-location {
+    background: none;
+    border: 0;
+    padding: 2px 4px 6px;
+    font-size: 12px;
+  }
+  .station-location small {
+    display: none;
+  }
+  .station-page[data-menu-open='true'] .station-location small {
+    display: block;
+    margin-left: 0;
+  }
+  .station-scene-tools {
+    display: none;
+  }
+  .station-playbar > div:first-child > small {
+    display: none;
+  }
+  .station-playbar p {
+    display: none;
+  }
+  .station-page[data-menu-open='true'] .station-playbar p {
+    display: block;
+  }
+  .station-desktop-help {
+    display: none;
+  }
+  .station-touch-help {
+    display: inline;
+  }
+  .station-city-picker {
+    top: 8px;
+    max-height: calc(100% - 16px);
+  }
+  .station-playbar {
+    padding: 12px;
+    gap: 10px;
+  }
+  .station-playbar output {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 700px), (max-height: 500px) and (pointer: coarse) {
+  .station-scene-tools {
+    display: flex;
+    pointer-events: none;
+  }
+  .station-scene-tools > button {
+    display: none;
+  }
+  .station-scene-tools > .station-camera-toggle {
+    display: flex;
+    pointer-events: auto;
+  }
+}
+
+/* Desktop actions float beside the world; touch layouts retain their bottom tray. */
+@media (min-width: 701px) and (min-height: 501px),
+  (min-width: 701px) and (pointer: fine) {
+  .station-world {
+    inset: 0;
+  }
+  .station-playbar {
+    inset: auto 24px 24px auto;
+    transform: none;
+    width: min(300px, calc(100% - 48px));
+    max-height: calc(100dvh - 160px);
+    overflow-y: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 18px;
+  }
+  .station-playbar output {
+    line-height: 1.6;
+  }
+  .station-playbar p {
+    line-height: 1.6;
+  }
+  .station-playbar > button,
+  .station-auto-controls {
+    width: 100%;
+    min-width: 0;
+  }
+}
