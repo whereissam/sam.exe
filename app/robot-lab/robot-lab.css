@@ -19,6 +19,12 @@
 .lab-controls .lab-gear-note { font-size: 11px; }
 .lab-playback { display: flex; flex-wrap: wrap; gap: 6px; margin: 20px 0 12px; }
 .lab-controls output { display: block; font-size: 11px; min-height: 32px; }
+.lab-next { display: grid; gap: 6px; margin: 22px 0 6px; padding: 14px; background: #f4e7b8; border: 1px solid #b4a474; border-left: 3px solid #b46d4e; color: #443e2c; text-decoration: none; }
+.lab-next small { font-size: 9px; letter-spacing: .15em; }
+.lab-next b { font-size: 15px; }
+.lab-next span { font-size: 11px; line-height: 1.5; }
+.lab-next:hover { background: #ead08b; }
+.lab-next:focus-visible { outline: 3px solid #a96644; outline-offset: 3px; }
 .lab-controls .lab-footnote { border-top: 1px solid #ccba88; padding-top: 18px; font-size: 10px; }
 .lab-loading { padding: 35px; }
 @media (max-width: 800px) { .robot-lab-page { height: auto; min-height: 100dvh; grid-template-columns: 1fr; grid-template-rows: 64px 60dvh auto; } .robot-lab-header { padding: 8px; gap: 8px; } .robot-lab-header strong { font-size: 11px; } .robot-lab-header small { display: none; } .lab-controls { overflow: visible; } .lab-controls h1 { font-size: 26px; } .lab-views { left: 10px; } .lab-orbit { left: 10px; font-size: 9px; } }
