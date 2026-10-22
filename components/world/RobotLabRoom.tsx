@@ -6,7 +6,7 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { TeleopBody } from './TeleoperationPair';
 import { GroundLabel } from './GroundLabel';
-import { StudioDoor, TravelPhotos, Luggage } from './RoomDoors';
+import { StudioDoor, TravelPhotos, Luggage, Passage } from './RoomDoors';
 import { ACTION_SECONDS, teleopPose, type CaptureGear } from './teleoperation';
 import { Footwork, type FootPose } from './footwork';
 import { sparringFrame, operatorHeading, captureFrame } from './sparring';
@@ -81,6 +81,29 @@ function Pair({ gear, command, fight, paused, reduced, onInspect }: { gear: Capt
     </group>
   </>;
 }
+/** A turntable bench with a mini humanoid: the way into the URDF playground. */
+function UrdfBench({ reduced }: { reduced: boolean }) {
+  const spin = useRef<THREE.Group>(null);
+  useFrame((_, delta) => { if (spin.current && !reduced) spin.current.rotation.y += Math.min(delta, 0.05) * 0.6; });
+  const shell = '#efe6cf', ink = '#35443f';
+  return <Passage href="/robot-lab/urdf" label="URDF playground · grab any joint">
+    <Block at={[0, 0.4, 0]} size={[1.6, 0.8, 0.9]} color="#78988a" />
+    <Block at={[0, 0.84, 0]} size={[1.7, 0.08, 1]} />
+    <mesh position={[0, 0.92, 0]} castShadow><cylinderGeometry args={[0.4, 0.42, 0.08, 40]} /><meshStandardMaterial color="#648f82" roughness={0.9} /></mesh>
+    <mesh position={[0, 0.961, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.32, 0.35, 40]} /><meshStandardMaterial color="#e7d9b4" /></mesh>
+    <group ref={spin} position={[0, 0.96, 0]}>
+      {[-0.06, 0.06].map(x => <Block key={x} at={[x, 0.17, 0]} size={[0.07, 0.34, 0.08]} color={shell} />)}
+      {[-0.06, 0.06].map(x => <Block key={x} at={[x, 0.015, 0.03]} size={[0.08, 0.03, 0.14]} color={ink} />)}
+      <Block at={[0, 0.38, 0]} size={[0.2, 0.08, 0.12]} color={ink} />
+      <Block at={[0, 0.54, 0]} size={[0.26, 0.24, 0.16]} color={shell} />
+      <Block at={[0, 0.55, 0.085]} size={[0.12, 0.08, 0.01]} color="#b46d4e" />
+      {[-0.17, 0.17].map(x => <Block key={x} at={[x, 0.5, 0]} size={[0.06, 0.28, 0.07]} color={shell} />)}
+      <mesh position={[0, 0.74, 0]} castShadow><sphereGeometry args={[0.08, 20, 16]} /><meshStandardMaterial color={shell} /></mesh>
+      <Block at={[0, 0.745, 0.06]} size={[0.12, 0.04, 0.04]} color={ink} />
+    </group>
+    <GroundLabel title="02 · URDF PLAYGROUND" position={[0, 0.005, 0.9]} width={2} />
+  </Passage>;
+}
 function Camera({ view, reset, reduced }: Pick<Props, 'view' | 'reset' | 'reduced'>) {
   const controls = useRef<React.ComponentRef<typeof OrbitControls>>(null);
   const { camera, size } = useThree();
@@ -126,6 +149,7 @@ export default function RobotLabRoom(props: Props) {
     <group position={[0, 0, -5.84]}><StudioDoor island /></group>
     <group position={[5.4, 2.9, -5.8]}><TravelPhotos /></group>
     <group position={[6.7, 0, -3.6]} rotation={[0, -0.2, 0]}><Luggage current="robot-lab" /></group>
+    <group position={[4.4, 0, 4.5]} rotation={[0, -0.45, 0]}><UrdfBench reduced={props.reduced} /></group>
     <group position={[0, 3.4, -5.85]} rotation={[Math.PI / 2, 0, 0]}><GroundLabel title="TWO HUMANS · TWO ROBOTS" position={[0, 0, 0]} width={6} dark /></group>
     {[-5.5, 5.5].map(x => <group key={x} position={[x, 0, -4.6]}><Block at={[0, 0.65, 0]} size={[2.8, 1.3, 1]} color="#78988a" /><Block at={[0, 1.34, 0]} size={[2.9, 0.1, 1.1]} />{[-0.8, 0, 0.8].map(dx => <Block key={dx} at={[dx, 1.03, 0.52]} size={[0.3, 0.05, 0.05]} color="#35443f" />)}<Block at={[-0.65, 1.6, 0]} size={[0.65, 0.42, 0.5]} color="#e5ddc5" /><Block at={[-0.65, 1.6, 0.26]} size={[0.52, 0.17, 0.02]} color="#35443f" />{[0.25, 0.65].map(dx => <Block key={dx} at={[dx, 1.5, 0]} size={[0.2, 0.25, 0.2]} color="#bd9856" />)}</group>)}
     <Camera view={props.view} reset={props.reset} reduced={props.reduced} />

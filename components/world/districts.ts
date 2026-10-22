@@ -43,9 +43,9 @@ export const districts = [
     color: '#ff927b',
     position: [12, 0.7, 7.8] as [number, number, number],
     description:
-      'Following a question beyond the screen. What happens when intelligence gets a body?',
+      'Give a little explorer a delivery task. Change its world, and watch it find another way.',
     technologies: ['AI agents', 'Embodied AI', 'Simulation'],
-    note: 'An evolving notebook of experiments at the edge of software and the physical world.',
+    note: 'Enter the observatory to explore how an agent observes, plans, acts, and adapts when its environment changes.',
   },
   {
     id: 'photography',
