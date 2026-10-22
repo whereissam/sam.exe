@@ -164,6 +164,7 @@ export default function Home() {
   }
   function select(d: District) {
     playSound('open');
+    if (d.id === 'travel') { keys.current.clear(); setMoving(false); setVisited(v => v.includes(d.id) ? v : [...v, d.id]); router.push('/elsewhere'); return; }
     if (d.id === 'blockchain') { keys.current.clear(); setMoving(false); setVisited(v => v.includes(d.id) ? v : [...v, d.id]); router.push('/blockchain'); return; }
     if (d.id === 'robotics') { keys.current.clear(); setMoving(false); setVisited(v => v.includes(d.id) ? v : [...v, d.id]); router.push('/robot-lab'); return; }
     previousFocus.current = document.activeElement as HTMLElement;

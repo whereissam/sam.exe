@@ -1,5 +1,11 @@
 export const linkedRooms = [
   {
+    id: 'elsewhere',
+    label: 'ELSEWHERE STATION',
+    href: '/elsewhere',
+    color: '#8ca89b',
+  },
+  {
     id: 'blockchain',
     label: 'TRUST WORKSHOP',
     href: '/blockchain',
