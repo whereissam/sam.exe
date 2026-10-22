@@ -10,8 +10,9 @@ import {
   useRef,
   useState,
   type RefObject,
+  type ReactNode,
 } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { TeaCup } from './TeaCup';
@@ -37,6 +38,7 @@ export type Motion = {
   viewing?: boolean;
   routine?: DailyRoutine;
   teaTime?: number;
+  reach?: number;
 };
 const duration = { wave: 2.2, jump: 0.85, celebrate: 2.5 };
 
@@ -45,11 +47,13 @@ function Avatar({
   motion,
   reduced,
   restingHeadLift = 0,
+  rightHandItem,
 }: {
   character: Character;
   motion: RefObject<Motion>;
   reduced: boolean;
   restingHeadLift?: number;
+  rightHandItem?: ReactNode;
 }) {
   const { scene } = useGLTF(manifest[character], false, false);
   const { object, joints, headDepth } = useMemo(() => {
@@ -97,6 +101,10 @@ function Avatar({
       m.walking && !reduced ? Math.abs(Math.sin(m.phase * 10)) * 0.035 : 0;
     object.rotation.z = 0;
     object.position.z = 0;
+    if (m.reach) {
+      if (joints.ArmL) joints.ArmL.rotation.x = -1.35 * m.reach;
+      if (joints.Head) joints.Head.rotation.x = 0.15 * m.reach;
+    }
     if (m.seated) {
       const atTable =
         m.teaTime !== undefined ||
@@ -201,7 +209,17 @@ function Avatar({
       object.position.y += reduced ? 0 : Math.abs(Math.sin(m.time * 8)) * 0.16;
     }
   });
-  return <primitive object={object} dispose={null} scale={0.52} />;
+  return (
+    <>
+      <primitive object={object} dispose={null} scale={0.52} />
+      {rightHandItem &&
+        joints.ArmR &&
+        createPortal(
+          <group position={[0.12, -0.525, 0.13]}>{rightHandItem}</group>,
+          joints.ArmR,
+        )}
+    </>
+  );
 }
 function Placeholder({ character }: { character: Character }) {
   return (

@@ -1,6 +1,12 @@
 export const linkedRooms = [
   { id: 'ai', label: 'AI OBSERVATORY', href: '/ai', color: '#aabda7' },
   {
+    id: 'elsewhere',
+    label: 'ELSEWHERE STATION',
+    href: '/elsewhere',
+    color: '#8ca89b',
+  },
+  {
     id: 'blockchain',
     label: 'TRUST WORKSHOP',
     href: '/blockchain',

@@ -67,9 +67,9 @@ export const districts = [
     color: '#93dce1',
     position: [0, -0.4, 14.3] as [number, number, number],
     description:
-      'A life across time zones. Places become stories, and stories become part of what I build.',
+      'Pick a city on the departure board, stamp a ticket, and open a suitcase of photographs and travel notes.',
     technologies: ['Slow travel', 'Remote life', 'Travel journals'],
-    note: 'An atlas of lived moments, connecting destinations with photographs, notes, and projects made along the way.',
+    note: 'An interactive miniature station connecting the existing travel journals and photo atlas. Sample journeys remain clearly marked.',
   },
 ] as const;
 export type District = (typeof districts)[number];
