@@ -1,4 +1,5 @@
 export const linkedRooms = [
+  { id: 'ai', label: 'AI OBSERVATORY', href: '/ai', color: '#aabda7' },
   {
     id: 'blockchain',
     label: 'TRUST WORKSHOP',
