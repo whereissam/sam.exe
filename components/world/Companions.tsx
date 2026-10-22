@@ -152,12 +152,13 @@ function Avatar({
           if (hand) hand.rotation.x = -0.65;
         }
         const pose = teaPose(reduced ? 0 : m.teaTime);
+        object.position.z = pose.lean;
         if (joints.ArmR && joints.ElbowR && joints.HandR)
           placeTeaHand(
             joints.ArmR,
             joints.ElbowR,
             joints.HandR,
-            pose.hand,
+            [pose.hand[0], pose.hand[1], pose.hand[2] - pose.lean],
             pose.grip,
           );
         if (joints.Head) {

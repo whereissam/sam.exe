@@ -47,10 +47,10 @@ export function TeaTable({
             {[-1, 1].map((side) => (
               <mesh
                 key={side}
-                position={[side * 0.58, 0.55, side * 0.125]}
+                position={[side * 0.63, 0.55, side * 0.125]}
                 receiveShadow
               >
-                <cylinderGeometry args={[0.085, 0.075, 0.012, 24]} />
+                <cylinderGeometry args={[0.07, 0.065, 0.012, 24]} />
                 <meshStandardMaterial color="#f3e6c9" />
               </mesh>
             ))}
