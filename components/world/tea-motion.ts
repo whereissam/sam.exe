@@ -12,9 +12,10 @@ export function teaPose(seconds: number) {
   const t = ((seconds % TEA_CYCLE) + TEA_CYCLE) % TEA_CYCLE;
   const lift = smooth((t - 2) / 2.5) * (1 - smooth((t - 6) / 2.5));
   const grip = smooth(t / 2) * (1 - smooth((t - 8.5) / 2));
-  const cup = mix([0.125, 0.658, 0.27], [0.015, 0.79, 0.16], lift);
+  const cup = mix([0.125, 0.658, 0.32], [0.015, 0.79, 0.16], lift);
   const handle = [cup[0] + 0.055, cup[1], cup[2]];
   return {
+    lean: 0.05 * (1 - lift),
     cup,
     hand: mix([0.12112258, 0.46075031, 0.1624707], handle, grip),
     grip,

@@ -30,7 +30,14 @@ test('both exported hands reach the cup handle throughout the actual drinking cy
       hand = scene.getObjectByName('HandR');
     for (let t = 0; t < TEA_CYCLE; t += 1 / 24) {
       const pose = teaPose(t);
-      placeTeaHand(arm, elbow, hand, pose.hand, pose.grip);
+      scene.position.z = pose.lean;
+      placeTeaHand(
+        arm,
+        elbow,
+        hand,
+        [pose.hand[0], pose.hand[1], pose.hand[2] - pose.lean],
+        pose.grip,
+      );
       scene.updateMatrixWorld(true);
       const actual = hand.getWorldPosition(new Vector3());
       assert.ok(
