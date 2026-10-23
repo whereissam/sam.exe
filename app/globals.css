@@ -4197,3 +4197,40 @@ button {
 @media (prefers-reduced-motion: reduce) {
   .world-loader *, .world-loader { animation: none !important; transition: none !important; }
 }
+
+/* A quiet, illustrated aside between the two travellers. */
+.conversation-bubble {
+  position: relative;
+  width: max-content;
+  max-width: min(230px, 65vw);
+  padding: 10px 15px 12px;
+  border: 2px solid #665845;
+  border-radius: 18px 20px 17px 6px;
+  background: #fff5d9;
+  color: #493e30;
+  box-shadow: 3px 4px 0 #66584525;
+  white-space: normal;
+  text-align: left;
+}
+.conversation-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: calc(50% - 7px);
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border-right: 2px solid #665845;
+  border-bottom: 2px solid #665845;
+  transform: rotate(45deg);
+}
+.conversation-bubble--companion { background: #f9eef5; }
+.conversation-speaker {
+  display: block;
+  margin-bottom: 4px;
+  color: #7b6854;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+.conversation-bubble p { margin: 0; font-size: 13px; line-height: 1.6; }

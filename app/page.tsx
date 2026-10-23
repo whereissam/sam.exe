@@ -63,6 +63,9 @@ class SceneBoundary extends Component<
   static getDerivedStateFromError() {
     return { failed: true };
   }
+  componentDidCatch(error: unknown) {
+    console.error('[SceneBoundary]', error);
+  }
   render() {
     return this.state.failed ? (
       <div className="scene-fallback">

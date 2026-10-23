@@ -51,7 +51,7 @@ test('only nearby districts prompt the traveller', () => {
 });
 
 test('canals cannot be crossed by walking or a straight shortcut', () => {
-  assert.equal(walkable({ x: 4, z: 4 }), false);
+  assert.equal(walkable({ x: 6, z: 6 }), false);
   assert.equal(landCoversSegment({ x: 2, z: 2 }, { x: 6.8, z: 7.2 }), false);
 });
 test('island heights and every bridge ramp join continuously', () => {
@@ -67,7 +67,7 @@ test('island heights and every bridge ramp join continuously', () => {
     });
     assert.ok(
       Math.abs(
-        harborHeight(point(bridge.start.radius + 0.00001)) - bridge.start.y,
+        harborHeight(point(bridge.start.radius + 0.00001)) - bridge.startHeight,
       ) < 0.0001,
     );
     assert.ok(
@@ -79,7 +79,7 @@ test('island heights and every bridge ramp join continuously', () => {
     const middle = harborHeight(
       point((bridge.start.radius + length - bridge.end.radius) / 2),
     );
-    assert.ok(Math.abs(middle - (bridge.start.y + bridge.end.y) / 2) < 0.0001);
+    assert.ok(Math.abs(middle - (bridge.startHeight + bridge.end.y) / 2) < 0.0001);
   }
 });
 
@@ -140,13 +140,22 @@ test('passport sign blocks the body from every direction, including a swept cros
   assert.ok(walkable(recoverWalkable(PASSPORT_POST)));
 });
 
-test('portal pillars are solid while the doorway remains accessible', async () => {
-  const { ROOM_PORTAL } = await import('./island-layout');
-  assert.ok(walkable(ROOM_PORTAL));
-  for (const side of [-1, 1]) assert.equal(walkable({
-    x: ROOM_PORTAL.x+side*.62*Math.cos(ROOM_PORTAL.rotation),
-    z: ROOM_PORTAL.z-side*.62*Math.sin(ROOM_PORTAL.rotation),
-  }), false);
+test('every harbor entrance has a reachable threshold and solid walls', async () => {
+  const { HARBOR_ENTRANCES, entrancePoint } = await import('./island-layout');
+  const { planRoute, followRoute } = await import('./navigation');
+  for (const entrance of HARBOR_ENTRANCES) {
+    assert.ok(walkable(entrance), entrance.id);
+    const route = planRoute(SPAWN, entrance);
+    assert.ok(route, `${entrance.id} must be reachable from arrival`);
+    let position = { ...SPAWN };
+    for (let i = 0; i < 500; i++) position = followRoute(position, route, .04);
+    assert.ok(Math.hypot(position.x - entrance.x, position.z - entrance.z) < .1);
+    for (const side of [-1, 1]) {
+      assert.equal(walkable(entrancePoint(entrance, side * .62, 0)), false);
+      assert.equal(walkable(entrancePoint(entrance, side * .62, -.43)), false);
+    }
+    assert.equal(walkable(entrancePoint(entrance, 0, -.85)), false);
+  }
 });
 
 test('ordinary movement cannot enter chairs or use the seated table clearance', async () => {
@@ -166,4 +175,19 @@ test('ordinary movement cannot enter chairs or use the seated table clearance', 
   assert.equal(walkable({x:TEA_TABLE.x,z:TEA_TABLE.z+.8}), false);
   assert.ok(planRoute(SPAWN, TEA_SEATS.sam, true));
   assert.equal(clearSegment(SPAWN, TEA_TABLE), false);
+});
+
+
+test('harbor stair treads raise the traveller to the bridge landing', async () => {
+  const { HARBOR_STEPS, HARBOR_RADIUS } = await import('./island-layout');
+  const bridge = harborBridges[0];
+  const length = Math.hypot(bridge.end.x, bridge.end.z);
+  const point = (along) => ({ x: bridge.end.x * along / length, z: bridge.end.z * along / length });
+  for (const step of HARBOR_STEPS) {
+    const p = point((step.from + step.to) / 2);
+    assert.ok(walkable(p));
+    assert.equal(harborHeight(p), step.height);
+  }
+  assert.equal(harborHeight(point(4.5)), 0);
+  assert.ok(Math.abs(harborHeight(point(HARBOR_RADIUS - .001)) - harborHeight(point(HARBOR_RADIUS + .001))) < .001);
 });
