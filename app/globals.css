@@ -624,20 +624,6 @@ i {
   font-size: 14px;
   line-height: 1.7;
 }
-.scene-loading {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  transition: opacity 350ms ease;
-}
-.scene-loading.is-loaded {
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 350ms ease, visibility 0s 350ms;
-}
-.scene-loading .scene-fallback {
-  animation: scene-loading-breathe 1.8s ease-in-out infinite;
-}
 .scene-reveal {
   width: 100%;
   height: 100%;
@@ -649,17 +635,9 @@ i {
   opacity: 1;
   pointer-events: auto;
 }
-@keyframes scene-loading-breathe {
-  50% { opacity: 0.45; }
-}
 @media (prefers-reduced-motion: reduce) {
-  .scene-loading,
-  .scene-loading.is-loaded,
   .scene-reveal {
     transition: none;
-  }
-  .scene-loading .scene-fallback {
-    animation: none;
   }
 }
 .world-label {
@@ -4168,4 +4146,54 @@ button {
 
 .memory-atlas.night .atlas-heading p {
   color: #d2c5a4;
+}
+
+/* The loading scene is CSS/SVG so it can paint before the WebGL bundle. */
+.world-loader {
+  position: absolute; inset: 0; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px; text-align: center; color: #514731; pointer-events: none;
+  transition: opacity 350ms ease, transform 350ms ease;
+}
+.world-loader.is-done { opacity: 0; transform: translateY(-10px); }
+.world-loader-art { width: min(360px, 65vw); margin-bottom: -10px; color: #719b8c; }
+.world-loader-art svg { width: 100%; overflow: visible; }
+.world-loader-copy { width: min(350px, 82vw); }
+.world-loader-kicker { font-size: 9px; font-weight: 600; letter-spacing: .19em; }
+.world-loader h2 { margin: 15px 0 23px; font-size: clamp(28px, 3.2vw, 43px); line-height: 1.08; font-weight: 500; letter-spacing: -.045em; }
+.world-loader h2 em { font-family: Georgia, serif; font-weight: 400; color: #527f70; }
+.loader-blocks { display: flex; gap: 5px; height: 21px; margin: 0 14px 24px; transform: perspective(450px) rotateX(22deg) rotateY(-8deg); }
+.loader-blocks i { flex: 1; position: relative; background: #d5c9a3; border-radius: 2px; box-shadow: 0 6px 0 #b6a67e; transition: background 250ms ease, transform 250ms ease, box-shadow 250ms ease; }
+.loader-blocks i::before { content: ''; position: absolute; top: 2px; left: 3px; right: 3px; height: 2px; background: #fff5d7; opacity: .6; }
+.loader-blocks i.is-filled { background: #86ac99; box-shadow: 0 6px 0 #527f70; transform: translateY(-3px); }
+.loader-blocks.is-indeterminate i { animation: loader-block-wave 1.8s ease-in-out infinite; animation-delay: calc(var(--block) * 90ms); }
+.world-loader-status { display: block; margin: 0; min-height: 2.6em; font-size: 12px; line-height: 1.5; color: #655d46; }
+.loader-stages { display: flex; justify-content: center; gap: 14px; margin-top: 16px; font-size: 9px; color: #817962; }
+.loader-stages span { display: flex; align-items: center; gap: 5px; }
+.loader-stages b { display: grid; place-items: center; width: 17px; height: 17px; border: 1px solid #b9b092; border-radius: 50%; font-weight: 400; }
+.loader-stages .is-current { color: #3e695b; }
+.loader-stages .is-current b { background: #d7e1c9; border-color: #8da58b; }
+.loader-piece { animation: loader-assemble 900ms cubic-bezier(.16,1,.3,1) both; }
+.loader-tree { animation-delay: 180ms; }
+.loader-beacon { animation-delay: 350ms; }
+.loader-island { animation: loader-assemble 700ms cubic-bezier(.16,1,.3,1) both; }
+.loader-cloud { animation: loader-cloud-drift 5s ease-in-out infinite alternate; }
+.loader-spark { animation: loader-twinkle 2.5s ease-in-out infinite; }
+.loader-ripple { transform-origin: 200px 189px; animation: loader-ripple 3s ease-out infinite; }
+@keyframes loader-assemble { from { opacity: 0; transform: translateY(-28px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes loader-block-wave { 0%, 65%, 100% { transform: translateY(0); } 30% { transform: translateY(-6px); background: #86ac99; box-shadow: 0 6px 0 #527f70; } }
+@keyframes loader-cloud-drift { to { transform: translateX(13px); } }
+@keyframes loader-twinkle { 50% { opacity: .25; } }
+@keyframes loader-ripple { from { opacity: .5; transform: scale(.85); } to { opacity: 0; transform: scale(1.12); } }
+.night .world-loader { color: #f0e1bd; }
+.night .world-loader h2 em, .night .loader-stages .is-current { color: #b7d8bd; }
+.night .world-loader-status, .night .loader-stages { color: #dfd2b1; }
+.night .loader-stages .is-current b { color: #3e695b; }
+@media (max-height: 650px) {
+  .world-loader-art { width: 220px; }
+  .world-loader h2 { font-size: 28px; margin: 8px 0 16px; }
+  .loader-stages { margin-top: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-loader *, .world-loader { animation: none !important; transition: none !important; }
 }

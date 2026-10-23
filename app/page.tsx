@@ -27,6 +27,9 @@ import {
   Minimize2,
 } from 'lucide-react';
 import Link from 'next/link';
+import { preload } from 'react-dom';
+import { WorldLoader, type WorldLoadProgress } from '@/components/world/WorldLoader';
+import characterAssets from '@/components/world/character-manifest.json';
 import { useRouter } from 'next/navigation';
 import { SoundToggle } from '@/components/audio/SoundToggle';
 import { mountSound, playSound } from '@/components/audio/sound';
@@ -118,6 +121,12 @@ export default function Home() {
     [reduced, setReduced] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [sceneLoaded, setSceneLoaded] = useState(false);
+  const [loadProgress, setLoadProgress] = useState<WorldLoadProgress>();
+  useEffect(() => {
+    if (!ready) return;
+    // Start the two critical downloads while the lazy 3D engine is still loading.
+    for (const href of Object.values(characterAssets)) preload(href, { as: 'fetch', crossOrigin: 'anonymous' });
+  }, [ready]);
   const onSceneReady = useCallback(() => setSceneLoaded(true), []);
   const [localTime, setLocalTime] = useState<Date | null>(null);
   // Holds the visitor's remembered choice, or null to follow their local hour.
@@ -351,11 +360,7 @@ export default function Home() {
         aria-label="Interactive 3D floating island. Drag to orbit, scroll to zoom, or choose a district below."
       >
         <SceneBoundary>
-          {!initialized && (
-            <output className="scene-fallback">
-              Assembling a small universe…
-            </output>
-          )}
+          {(!initialized || ready) && <WorldLoader done={sceneLoaded} progress={loadProgress} />}
           {initialized && !ready && (
             <div className="lightweight-entry">
               <span className="entry-kicker">YOUR WORLD, AT YOUR PACE</span>
@@ -380,19 +385,12 @@ export default function Home() {
           )}
           {ready && (
             <>
-              <output
-                className={`scene-loading ${sceneLoaded ? 'is-loaded' : ''}`}
-                aria-hidden={sceneLoaded}
-              >
-                <span className="scene-fallback">
-                  Assembling a small universe…
-                </span>
-              </output>
               <div className={`scene-reveal ${sceneLoaded ? 'is-loaded' : ''}`}>
                 <Suspense fallback={null}>
                   <World
                     roaming={roaming}
                     onReady={onSceneReady}
+                    onProgress={setLoadProgress}
                     onSelect={select}
                     onNear={setNear}
                     keys={keys}
@@ -549,6 +547,7 @@ export default function Home() {
             onClick={() => {
               setReady(false);
               setSceneLoaded(false);
+              setLoadProgress(undefined);
               setInspecting(false);
               setNear(null);
               keys.current.clear();
