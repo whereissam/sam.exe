@@ -12,7 +12,7 @@ export const tourStops = [0, 4, 2, 3, 5, 1].map((index) => {
     title: district.title,
     goal: {
       x: district.position[0],
-      z: district.position[2] + (district.id === 'robotics' ? 2.6 : 1.8),
+      z: district.position[2] + (district.id === 'robotics' ? 2.7 : 1.8),
     },
     lookAt: { x: district.position[0], z: district.position[2] },
     stay: 60 + (index % 3) * 15,
@@ -178,7 +178,7 @@ export class AmbientTour {
 
     if ((this.teaDue && this.teaAllowed) || this.working || this.night) {
       const other = model.active === 'sam' ? 'companion' : 'sam';
-      if (model.goTo(TEA_SEATS[model.active], TEA_SEATS[other])) {
+      if (model.goTo(TEA_SEATS[model.active], TEA_SEATS[other], true)) {
         this.phase = 'gathering';
         this.seconds = 0;
         this.travelSeconds = 0;

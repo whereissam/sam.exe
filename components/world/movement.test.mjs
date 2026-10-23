@@ -38,8 +38,8 @@ test('island edge, installations, pond, windmill and campfire cannot be entered'
 });
 test('diagonal collision keeps movement on the unobstructed axis', () => {
   const z = districts.find((d) => d.id === 'travel').position[2];
-  const next = advance({ x: 1.5, z }, { x: -0.2, z: 0.2 });
-  assert.deepEqual(next, { x: 1.5, z: z + 0.2 });
+  const next = advance({ x: 1.65, z }, { x: -0.2, z: 0.2 });
+  assert.deepEqual(next, { x: 1.65, z: z + 0.2 });
   assert.ok(walkable(next));
 });
 test('only nearby districts prompt the traveller', () => {
@@ -117,7 +117,53 @@ test('buildings and scenery cannot be walked into from any angle', () => {
  test('robot fight exhibit blocks its wider footprint and remains approachable', () => {
   const lab = districts.find(d => d.id === 'robotics');
   assert.equal(walkable({ x: lab.position[0] + 2.2, z: lab.position[2] }), false);
-  const approach = { x: lab.position[0], z: lab.position[2] + 2.6 };
+  const approach = { x: lab.position[0], z: lab.position[2] + 2.7 };
   assert.ok(walkable(approach));
   assert.equal(nearestDistrict(approach)?.id, 'robotics');
+});
+
+test('passport sign blocks the body from every direction, including a swept crossing', async () => {
+  const { PASSPORT_POST } = await import('./island-layout');
+  const { clearSegment, WALK_CLEARANCE, recoverWalkable } = await import('./movement');
+  assert.equal(walkable(PASSPORT_POST), false);
+  let tested = 0;
+  for (let i = 0; i < 48; i++) {
+    const angle = i*Math.PI*2/48;
+    const start = {x: PASSPORT_POST.x + Math.cos(angle)*.8, z: PASSPORT_POST.z + Math.sin(angle)*.8};
+    if (!walkable(start)) continue;
+    const end = advance(start, {x: PASSPORT_POST.x-start.x, z: PASSPORT_POST.z-start.z});
+    assert.ok(Math.hypot(end.x-PASSPORT_POST.x, end.z-PASSPORT_POST.z) >= PASSPORT_POST.radius+WALK_CLEARANCE);
+    assert.equal(clearSegment(start, {x: 2*PASSPORT_POST.x-start.x, z: 2*PASSPORT_POST.z-start.z}), false);
+    tested++;
+  }
+  assert.ok(tested > 10);
+  assert.ok(walkable(recoverWalkable(PASSPORT_POST)));
+});
+
+test('portal pillars are solid while the doorway remains accessible', async () => {
+  const { ROOM_PORTAL } = await import('./island-layout');
+  assert.ok(walkable(ROOM_PORTAL));
+  for (const side of [-1, 1]) assert.equal(walkable({
+    x: ROOM_PORTAL.x+side*.62*Math.cos(ROOM_PORTAL.rotation),
+    z: ROOM_PORTAL.z-side*.62*Math.sin(ROOM_PORTAL.rotation),
+  }), false);
+});
+
+test('ordinary movement cannot enter chairs or use the seated table clearance', async () => {
+  const { TEA_CHAIRS, TEA_TABLE, TEA_SEATS } = await import('./island-layout');
+  const { clearSegment } = await import('./movement');
+  const { planRoute, followRoute } = await import('./navigation');
+  for (const chair of TEA_CHAIRS) {
+    assert.equal(walkable(chair), false);
+    assert.equal(planRoute(SPAWN, chair), null);
+    const start = {x: chair.x, z: chair.z+.7};
+    let position = start;
+    for (let i=0; i<180; i++) position = advance(position, {x:0,z:-.04});
+    assert.ok(Math.hypot(position.x-chair.x,position.z-chair.z) >= chair.radius+.2-1e-7);
+    // A route retained from an older scene must not bypass newly added solids.
+    assert.deepEqual(followRoute(start, [{x:chair.x,z:chair.z-.7}], 2), start);
+  }
+  assert.equal(walkable({x:TEA_TABLE.x,z:TEA_TABLE.z+.8}), false);
+  assert.ok(planRoute(SPAWN, TEA_SEATS.sam, true));
+  assert.equal(clearSegment(SPAWN, TEA_TABLE), false);
 });

@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import { Box3, Vector3 } from 'three';
+import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const manifest = JSON.parse(
@@ -30,17 +31,19 @@ for (const [name, url] of Object.entries(manifest)) {
     'LegR',
     'KneeL',
     'KneeR',
-    'Body',
+    'Body', 'Hips', 'Spine', 'Chest', 'Neck',
+    'ShoulderL', 'ShoulderR', 'FootL', 'FootR', 'ToeL', 'ToeR',
   ])
-    assert.ok(scene.getObjectByName(joint), `${name}: missing ${joint}`);
+    assert.ok(scene.getObjectByName(joint)?.isBone, `${name}: missing ${joint}`);
   const size = new Box3().setFromObject(scene).getSize(new Vector3());
   assert.ok(size.y > 2 && size.y < 2.7, `${name}: avatar height ${size.y}`);
   assert.ok(size.x > 0.8 && size.x < 1.5, `${name}: avatar width ${size.x}`);
   const arm = scene.getObjectByName('ArmR');
-  const before = new Box3().setFromObject(arm).getCenter(new Vector3());
+  const hand = scene.getObjectByName('HandR');
+  const before = hand.getWorldPosition(new Vector3());
   arm.rotation.z = 2.5;
   scene.updateMatrixWorld(true);
-  const after = new Box3().setFromObject(arm).getCenter(new Vector3());
+  const after = hand.getWorldPosition(new Vector3());
   assert.ok(
     after.y > before.y + 0.2,
     `${name}: raised arm must lift above resting pose`,
@@ -57,14 +60,43 @@ for (const [name, url] of Object.entries(manifest)) {
     leg.rotation.x = -Math.PI / 2;
     knee.rotation.x = Math.PI / 2;
     scene.updateMatrixWorld(true);
-    const shin = new Box3().setFromObject(knee).getSize(new Vector3());
-    assert.ok(
-      shin.y > 0.4 && shin.y < 0.6,
-      `${name}: seated shin must remain vertical`,
+    const shin = knee.getWorldPosition(new Vector3()).sub(
+      scene.getObjectByName('Foot'+side).getWorldPosition(new Vector3()),
     );
+    assert.ok(shin.y > .29 && Math.abs(shin.x) < .001 && Math.abs(shin.z) < .05,
+      `${name}: seated shin must remain vertical`);
     leg.rotation.x = 0;
     knee.rotation.x = 0;
   }
+  scene.updateMatrixWorld(true);
+  const isolated = clone(scene);
+  assert.notEqual(isolated.getObjectByName('Head'), scene.getObjectByName('Head'));
+  let skinned = 0, deformed = 0;
+  scene.traverse(node => {
+    if (!node.isSkinnedMesh) return;
+    skinned++;
+    const weights = node.geometry.attributes.skinWeight;
+    for (let i = 0; i < weights.count; i++) {
+      const sum = weights.getX(i)+weights.getY(i)+weights.getZ(i)+weights.getW(i);
+      assert.ok(Math.abs(sum-1) < .001, `${name}: unbound vertex`);
+    }
+    node.skeleton.update();
+    const positions = node.geometry.attributes.position;
+    const rest = Array.from({length: positions.count}, (_, i) => node.getVertexPosition(i, new Vector3()));
+    scene.getObjectByName('Chest').rotation.z = .15;
+    scene.updateMatrixWorld(true);
+    node.skeleton.update();
+    if (rest.some((v, i) => v.distanceTo(node.getVertexPosition(i, new Vector3())) > .02)) deformed++;
+    scene.getObjectByName('Chest').rotation.z = 0;
+    scene.updateMatrixWorld(true);
+    node.skeleton.update();
+  });
+  assert.ok(deformed > 0, `${name}: chest bone must deform the skin`);
+  assert.ok(skinned > 0, `${name}: missing skinned mesh`);
+  isolated.traverse(node => {
+    if (node.isSkinnedMesh)
+      assert.equal(node.skeleton.bones.find(b => b.name === 'Head'), isolated.getObjectByName('Head'));
+  });
   let triangles = 0,
     primitives = 0;
   scene.traverse((node) => {
@@ -84,7 +116,8 @@ for (const [name, url] of Object.entries(manifest)) {
     triangles,
     primitives,
     height: size.y,
-    articulation: 'raised arm, seated knees, and hand hierarchy verified',
+    skinnedMeshes: skinned,
+    articulation: '22 humanoid bones, normalized skin weights, chest deformation, independent clones, raised arm and seated knees verified',
   };
 }
 await writeFile(

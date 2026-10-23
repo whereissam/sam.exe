@@ -1,5 +1,5 @@
 'use client';
-import { BEACON_SPOT, harborHeight } from './island-layout';
+import { BEACON_SPOT, PASSPORT_POST, ROOM_PORTAL, harborHeight } from './island-layout';
 import { oceanHorizon } from './OceanBackdrop';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Html, OrbitControls, Sparkles, useProgress } from '@react-three/drei';
@@ -502,7 +502,7 @@ function PassportPost({
   }, [hovered, paused]);
   return (
     <group
-      position={[-1.55, 0.12, 1.95]}
+      position={[PASSPORT_POST.x, 0.12, PASSPORT_POST.z]}
       onClick={(event) => {
         if (paused || event.delta > 5) return;
         event.stopPropagation();
@@ -562,7 +562,7 @@ function RoomPortal({
   const [near, setNear] = useState(false);
   const wasNear = useRef(false);
   const entered = useRef(false);
-  const position = { x: 2.65, z: 1.7 };
+  const position = ROOM_PORTAL;
   useFrame(() => {
     if (paused) return;
     const distance = Math.hypot(
@@ -583,7 +583,7 @@ function RoomPortal({
   return (
     <group
       position={[position.x, 0.12, position.z]}
-      rotation={[0, -0.55, 0]}
+      rotation={[0, ROOM_PORTAL.rotation, 0]}
       onClick={(event) => {
         if (paused || event.delta > 5) return;
         event.stopPropagation();

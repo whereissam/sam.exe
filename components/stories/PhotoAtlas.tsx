@@ -61,6 +61,7 @@ import {
   labelHeights,
   LANDMARK_SCALE,
   atlasAdvance,
+  atlasClear,
   atlasRoute,
   countriesFromPhotos,
   type AtlasBounds,
@@ -324,7 +325,9 @@ function Walker({
         obstacles,
       );
     } else
-      next = followRoute(before, route.current, dt * (country ? 4.5 : 3.5));
+      next = followRoute(before, route.current, dt * (country ? 4.5 : 3.5), 0, (a, b) =>
+        atlasClear(a, b, bounds, obstacles),
+      );
     const dx = next.x - before.x,
       dz = next.z - before.z;
     const moving = Math.hypot(dx, dz) > 0.00001;

@@ -1,16 +1,18 @@
 {
   "sam": {
-    "bytes": 291872,
-    "triangles": 4550,
-    "primitives": 25,
-    "height": 2.3025000393390656,
-    "articulation": "raised arm, seated knees, and hand hierarchy verified"
+    "bytes": 426336,
+    "triangles": 5142,
+    "primitives": 13,
+    "height": 2.302500069141388,
+    "skinnedMeshes": 13,
+    "articulation": "22 humanoid bones, normalized skin weights, chest deformation, independent clones, raised arm and seated knees verified"
   },
   "companion": {
-    "bytes": 297100,
-    "triangles": 4610,
-    "primitives": 23,
-    "height": 2.467500001192093,
-    "articulation": "raised arm, seated knees, and hand hierarchy verified"
+    "bytes": 434384,
+    "triangles": 5202,
+    "primitives": 10,
+    "height": 2.4675000309944153,
+    "skinnedMeshes": 10,
+    "articulation": "22 humanoid bones, normalized skin weights, chest deformation, independent clones, raised arm and seated knees verified"
   }
 }

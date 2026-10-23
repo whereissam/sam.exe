@@ -10,12 +10,13 @@ function tick(tour, model, seconds, allowed = true, night = false) {
     const before = Object.fromEntries(
       Object.entries(model.walkers).map(([id, w]) => [id, { ...w.position }]),
     );
+    const wasSeating = model.seating;
     tour.step(1 / 60, model, allowed, night);
     model.step(1 / 60);
     for (const [id, walker] of Object.entries(model.walkers)) {
-      assert.ok(walkable(walker.position), `${id} left the island`);
+      assert.ok(walkable(walker.position, model.seating), `${id} left the island`);
       assert.ok(
-        clearSegment(before[id], walker.position),
+        clearSegment(before[id], walker.position, model.seating || wasSeating),
         `${id} crossed an obstacle`,
       );
     }

@@ -20,12 +20,13 @@ test('walking toward the table from every direction stops the body outside the t
   }
 });
 test('both seats remain reachable and routes between them go around the table', () => {
-  const route = planRoute(TEA_SEATS.sam, TEA_SEATS.companion);
+  // Seats sit inside the solid chairs, so routes between them use seating mode.
+  const route = planRoute(TEA_SEATS.sam, TEA_SEATS.companion, true);
   expect(route).not.toBeNull();
   let p = TEA_SEATS.sam;
   for (const q of route) {
-    expect(clearSegment(p, q)).toBe(true);
+    expect(clearSegment(p, q, true)).toBe(true);
     p = q;
   }
-  expect(clearSegment(TEA_SEATS.sam, TEA_SEATS.companion)).toBe(false);
+  expect(clearSegment(TEA_SEATS.sam, TEA_SEATS.companion, true)).toBe(false);
 });

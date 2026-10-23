@@ -124,7 +124,7 @@ export function atlasWalkable(
     obstacles.every((o) => Math.hypot(p.x - o.x, p.z - o.z) > o.radius)
   );
 }
-function clear(
+export function atlasClear(
   a: Point,
   b: Point,
   bounds: AtlasBounds,
@@ -152,12 +152,12 @@ export function atlasAdvance(
   obstacles: AtlasObstacle[],
 ) {
   const next = { x: p.x + delta.x, z: p.z + delta.z };
-  if (clear(p, next, bounds, obstacles)) return next;
+  if (atlasClear(p, next, bounds, obstacles)) return next;
   const x = { x: next.x, z: p.z },
     z = { x: p.x, z: next.z };
-  return clear(p, x, bounds, obstacles)
+  return atlasClear(p, x, bounds, obstacles)
     ? x
-    : clear(p, z, bounds, obstacles)
+    : atlasClear(p, z, bounds, obstacles)
       ? z
       : p;
 }
@@ -172,7 +172,7 @@ export function atlasRoute(
     !atlasWalkable(goal, bounds, obstacles)
   )
     return null;
-  if (clear(start, goal, bounds, obstacles)) return [goal];
+  if (atlasClear(start, goal, bounds, obstacles)) return [goal];
   const points = [
     start,
     goal,
@@ -200,7 +200,7 @@ export function atlasRoute(
     for (let i = 0; i < points.length; i++) {
       if (
         visited.has(i) ||
-        !clear(points[current], points[i], bounds, obstacles)
+        !atlasClear(points[current], points[i], bounds, obstacles)
       )
         continue;
       const cost =
