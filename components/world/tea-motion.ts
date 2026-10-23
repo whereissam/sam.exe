@@ -34,6 +34,13 @@ export function placeTeaHand(
 ) {
   const shoulder = arm.position.clone();
   const goal = new Vector3(...target).multiplyScalar(1 / 0.52);
+  // Targets are avatar-local; the upgraded arm lives below chest/shoulder bones.
+  let rig = arm.parent;
+  while (rig && !rig.userData.rig_version) rig = rig.parent;
+  if (rig && arm.parent) {
+    rig.updateWorldMatrix(true, true);
+    arm.parent.worldToLocal(rig.localToWorld(goal));
+  }
   const upper = elbow.position.length();
   const lower = hand.position.length();
   const direction = goal.clone().sub(shoulder);

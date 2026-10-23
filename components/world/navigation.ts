@@ -1,43 +1,45 @@
-import { islandObstacles, harborWaypoints } from './island-layout';
-import { clearSegment, walkable, WALK_CLEARANCE, type Point } from './movement';
+import { harborWaypoints } from './island-layout';
+import { clearSegment, walkable, obstacleClearance, collisionObstacles, type Point } from './movement';
 
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.z - b.z);
 type Edge = { to: number; distance: number };
-let graph: { points: Point[]; edges: Edge[][] } | undefined;
-function islandGraph() {
-  if (graph) return graph;
+const graphs = new Map<boolean, { points: Point[]; edges: Edge[][] }>();
+function islandGraph(seating = false) {
+  const cached = graphs.get(seating);
+  if (cached) return cached;
   // A circumscribed polygon leaves clearance even along adjacent straight edges.
   const points = [
     ...harborWaypoints,
-    ...islandObstacles.flatMap((d) =>
+    ...collisionObstacles(seating).flatMap((d) =>
       Array.from({ length: 24 }, (_, i) => {
         const angle = (i * Math.PI * 2) / 24,
-          radius = d.radius + WALK_CLEARANCE + 0.055;
+          radius = d.radius + obstacleClearance(d, seating) + 0.055;
         return {
           x: d.x + Math.cos(angle) * radius,
           z: d.z + Math.sin(angle) * radius,
         };
       }),
     ),
-  ].filter(walkable);
+  ].filter(p => walkable(p, seating));
   const edges: Edge[][] = points.map(() => []);
   for (let i = 0; i < points.length; i++)
     for (let j = i + 1; j < points.length; j++) {
-      if (!clearSegment(points[i], points[j])) continue;
+      if (!clearSegment(points[i], points[j], seating)) continue;
       const cost = distance(points[i], points[j]);
       edges[i].push({ to: j, distance: cost });
       edges[j].push({ to: i, distance: cost });
     }
-  graph = { points, edges };
+  const graph = { points, edges };
+  graphs.set(seating, graph);
   return graph;
 }
 
 /** Waypoints exclude the start and include the exact destination. Null means invalid/unreachable. */
-export function planRoute(start: Point, goal: Point): Point[] | null {
-  if (!walkable(start) || !walkable(goal)) return null;
+export function planRoute(start: Point, goal: Point, seating = false): Point[] | null {
+  if (!walkable(start, seating) || !walkable(goal, seating)) return null;
   if (distance(start, goal) < 1e-7) return [];
-  if (clearSegment(start, goal)) return [{ ...goal }];
-  const { points: fixed, edges: fixedEdges } = islandGraph();
+  if (clearSegment(start, goal, seating)) return [{ ...goal }];
+  const { points: fixed, edges: fixedEdges } = islandGraph(seating);
   const points = [...fixed, start, goal],
     origin = fixed.length,
     end = origin + 1;
@@ -45,7 +47,7 @@ export function planRoute(start: Point, goal: Point): Point[] | null {
   edges.push([], []);
   for (const endpoint of [origin, end])
     for (let i = 0; i < fixed.length; i++) {
-      if (!clearSegment(points[endpoint], points[i])) continue;
+      if (!clearSegment(points[endpoint], points[i], seating)) continue;
       const cost = distance(points[endpoint], points[i]);
       edges[endpoint].push({ to: i, distance: cost });
       edges[i].push({ to: endpoint, distance: cost });
@@ -82,6 +84,7 @@ export function followRoute(
   route: Point[],
   budget: number,
   gap = 0,
+  clear: (a: Point, b: Point) => boolean = clearSegment,
 ): Point {
   let remaining = 0,
     previous = position;
@@ -94,6 +97,12 @@ export function followRoute(
   while (route.length && budget > 1e-7) {
     const point = route[0],
       step = distance(next, point);
+    const candidate = step <= budget + 1e-7 ? point : {
+      x: next.x + (point.x-next.x)*budget/step,
+      z: next.z + (point.z-next.z)*budget/step,
+    };
+    // Validate at execution time too: a cached route is never permission to cross a solid.
+    if (!clear(next, candidate)) { route.length = 0; break; }
     if (step <= budget + 1e-7) {
       next = { ...point };
       route.shift();

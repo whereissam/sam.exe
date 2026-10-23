@@ -16,6 +16,7 @@ import {
   atlasRoute,
   atlasWalkable,
   atlasAdvance,
+  atlasClear,
 } from './photo-atlas.ts';
 import places from './world-places.json';
 import { followRoute } from './navigation.ts';
@@ -64,7 +65,9 @@ test('the traveller reaches every destination from every other destination witho
       expect(route).not.toBeNull();
       let position = start;
       for (let i = 0; i < 2000 && route.length; i++) {
-        position = followRoute(position, route, 0.04);
+        position = followRoute(position, route, 0.04, 0, (a, b) =>
+          atlasClear(a, b, bounds, obstacles),
+        );
         expect(atlasWalkable(position, bounds, obstacles)).toBe(true);
       }
       expect(Math.hypot(position.x - goal.x, position.z - goal.z)).toBeLessThan(

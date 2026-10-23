@@ -47,6 +47,31 @@ def create_couple(position=(0, 0, 0), scale=1, explore=False):
         bpy.context.object.rotation_euler = (b-a).to_track_quat('Z', 'Y').to_euler()
         return finish(name, color)
 
+    def torso(name, x, color, index):
+        # A fitted silhouette: hips, waist, rib cage and sloping shoulders.
+        rings = [( .70, .27, .18), (.78, .29, .19),
+                 (.94, .25 if index else .28, .18),
+                 (1.15, .31, .205), (1.27, .34, .19),
+                 (1.35, .24, .16), (1.39, .13, .12)]
+        vertices, faces = [], []
+        count = 16
+        for z, width, depth in rings:
+            for i in range(count):
+                angle = math.tau * i / count
+                vertices.append((x + width * math.cos(angle), depth * math.sin(angle), z))
+        for row in range(len(rings)-1):
+            for i in range(count):
+                a = row*count+i; b = row*count+(i+1)%count
+                faces.append((a, b, b+count, a+count))
+        faces += [tuple(reversed(range(count))), tuple((len(rings)-1)*count+i for i in range(count))]
+        mesh = bpy.data.meshes.new(name+' fitted topology')
+        mesh.from_pydata(vertices, [], faces); mesh.update()
+        obj = bpy.data.objects.new(name, mesh)
+        bpy.context.collection.objects.link(obj)
+        bpy.context.view_layer.objects.active = obj
+        finish(name, color)
+        for face in mesh.polygons: face.use_smooth = True
+
     def face_shape(name, x, top, index, color):
         # Independent forehead, cheek, jaw and chin profiles, rather than a cube.
         profiles = [
@@ -104,13 +129,16 @@ def create_couple(position=(0, 0, 0), scale=1, explore=False):
             px = x + side*.17
             trouser = '#515567' if index == 0 else '#e8dfd2'
             if explore:
-                rounded(prefix+' thigh', (px, .015, .585), (.25, .3, .34), trouser, .07)
-                rounded(prefix+' shin', (px, .015, .29), (.235, .28, .32), trouser, .065)
+                rounded(prefix+' thigh', (px, .015, .585), (.235, .28, .35), trouser, .09)
+                rounded(prefix+' shin', (px, .015, .29), (.205, .25, .34), trouser, .085)
             else:
                 rounded(prefix+' trousers', (px, .015, .44), (.25, .3, .63), trouser)
-            rounded(prefix+' sneaker', (px, -.085, .115), (.29, .48, .2), '#f6ebda', .045)
-            rounded(prefix+' sole', (px, -.085, .045), (.3, .49, .065), '#a899b4', .018)
-        rounded(prefix+' shirt', (x, 0, 1.05), (.73, .43, .72), shirt, .13)
+            rounded(prefix+' sneaker', (px, -.085, .115), (.255, .43, .18), '#f6ebda', .045)
+            rounded(prefix+' sole', (px, -.085, .045), (.265, .44, .065), '#a899b4', .018)
+        if explore:
+            torso(prefix+' shirt', x, shirt, index)
+        else:
+            rounded(prefix+' shirt', (x, 0, 1.05), (.73, .43, .72), shirt, .13)
         limb(prefix+' neck', (x, 0, 1.36), (x, 0, 1.54), .13, skin)
         surface = face_shape(prefix+' face', x, top, index, skin)
         for side in [-1, 1]:
@@ -181,7 +209,10 @@ def create_couple(position=(0, 0, 0), scale=1, explore=False):
             a = (x+outer*.34, 0, 1.28)
             b = (x+outer*.46, -.035, 1.02)
             c = (x+outer*.46, -.13, .82)
-            limb(prefix+' sleeve', a, b, .12, shirt)
+            limb(prefix+' sleeve', a, b, .105 if explore else .12, shirt)
+            if explore:
+                sphere(prefix+' sleeve shoulder', a, (.112, .11, .115), shirt)
+                sphere(prefix+' forearm elbow', b, (.087, .087, .087), skin if index == 0 else shirt)
             limb(prefix+' forearm', b, c, .085, skin if index == 0 else shirt)
             sphere(prefix+' hand', (c[0],c[1],c[2]-.065), (.075, .065, .085), skin)
         for obj in objects[first_object:]: obj['character_index']=index

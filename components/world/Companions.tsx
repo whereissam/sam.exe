@@ -15,15 +15,17 @@ import {
 import { createPortal, useFrame, useThree } from '@react-three/fiber';
 import { Html, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { TeaCup } from './TeaCup';
 import { teaPose, placeTeaHand } from './tea-motion';
 import { TeaTable } from './TeaTable';
 import { ModelBoundary } from './DistrictModel';
 import { Rest, type DailyRoutine } from './daily-routine';
+import { stretchPose } from './stretch-motion';
 import manifest from './character-manifest.json';
-import { cameraRelative, nearestDistrict, SPAWN, type Point } from './movement';
+import { cameraRelative, nearestDistrict, hasStretchRoom, SPAWN, type Point } from './movement';
 import type { District } from './districts';
-import { Exploration, type Character } from './exploration';
+import { Exploration, STRETCH_SPACE, type Character } from './exploration';
 import { AmbientTour } from './ambient-tour';
 export type { Character } from './exploration';
 
@@ -39,6 +41,7 @@ export type Motion = {
   routine?: DailyRoutine;
   teaTime?: number;
   reach?: number;
+  armsBlocked?: boolean;
 };
 const duration = { wave: 2.2, jump: 0.85, celebrate: 2.5 };
 
@@ -56,16 +59,32 @@ function Avatar({
   rightHandItem?: ReactNode;
 }) {
   const { scene } = useGLTF(manifest[character], false, false);
-  const { object, joints, headDepth } = useMemo(() => {
-    const object = scene.clone(true);
+  const { object, joints, headDepth, wardrobe } = useMemo(() => {
+    const object = cloneSkeleton(scene);
+    const wardrobe = new Map<THREE.MeshStandardMaterial, { color: THREE.Color; accessory: boolean; shirt: boolean }>();
     object.traverse((n) => {
-      if ((n as THREE.Mesh).isMesh) n.castShadow = true;
+      if (!(n as THREE.Mesh).isMesh) return;
+      n.castShadow = true;
+      const mesh = n as THREE.Mesh;
+      // Animated limbs can extend beyond the GLB's rest-pose bounds.
+      mesh.frustumCulled = false;
+      const adapt = (material: THREE.Material) => {
+        if (!(material instanceof THREE.MeshStandardMaterial) ||
+          !/shirt|thigh|camera/i.test(material.name)) return material;
+        const copy = material.clone();
+        wardrobe.set(copy, {
+          color: copy.color.clone(),
+          accessory: /camera/i.test(copy.name),
+          shirt: /shirt/i.test(copy.name),
+        });
+        return copy;
+      };
+      mesh.material = Array.isArray(mesh.material)
+        ? mesh.material.map(adapt) : adapt(mesh.material);
     });
-    for (const name of ['HandL', 'HandR']) {
-      object.getObjectByName(name)?.scale.set(0.85, 1, 0.6);
-    }
     return {
       object,
+      wardrobe,
       headDepth: object.getObjectByName('Head')?.position.z ?? 0,
       joints: Object.fromEntries(
         [
@@ -80,12 +99,30 @@ function Avatar({
           'KneeL',
           'KneeR',
           'Head',
+          'Spine',
+          'Chest',
         ].map((name) => [name, object.getObjectByName(name)]),
       ),
     };
   }, [scene]);
+  useEffect(() => () => { wardrobe.forEach((_, material) => material.dispose()); }, [wardrobe]);
+  const stretching = useRef(false);
+  const stretchStart = useRef(0);
   useFrame(({ clock }) => {
     const m = motion.current;
+    const activeStretch = m.routine === 'stretch' && !m.walking && !m.seated && !m.gesture && !m.viewing;
+    if (activeStretch !== stretching.current) {
+      stretching.current = activeStretch;
+      stretchStart.current = clock.elapsedTime;
+      wardrobe.forEach((original, material) => {
+        material.visible = !(activeStretch && original.accessory);
+        if (activeStretch && !original.accessory) {
+          material.color.set(original.shirt
+            ? (character === 'sam' ? '#6daaa0' : '#d39cae')
+            : (character === 'sam' ? '#344d58' : '#645775'));
+        } else material.color.copy(original.color);
+      });
+    }
     // Local +Z faces upward when the room avatar is lying on its back.
     if (joints.Head) joints.Head.position.z = headDepth + restingHeadLift;
     const swing = m.walking
@@ -175,12 +212,19 @@ function Avatar({
       if (joints.LegR) joints.LegR.rotation.x = -0.4;
       if (joints.ArmL) joints.ArmL.rotation.x = -0.9;
       if (joints.ArmR) joints.ArmR.rotation.x = -0.9;
-    } else if (m.routine === 'stretch') {
-      if (joints.ArmL) joints.ArmL.rotation.z = -2.6;
-      if (joints.ArmR) joints.ArmR.rotation.z = 2.6;
-      object.rotation.z = reduced
-        ? 0.06
-        : Math.sin(clock.elapsedTime * 0.7) * 0.08;
+    } else if (activeStretch) {
+      const pose = stretchPose(clock.elapsedTime - stretchStart.current, reduced);
+      if (joints.ArmL) joints.ArmL.rotation.z = pose.left;
+      if (joints.ArmR) joints.ArmR.rotation.z = pose.right;
+      for (const side of ['L', 'R']) {
+        if (joints['Elbow' + side]) joints['Elbow' + side]!.rotation.x = pose.elbow;
+        if (joints['Leg' + side]) joints['Leg' + side]!.rotation.x = -pose.squat;
+        if (joints['Knee' + side]) joints['Knee' + side]!.rotation.x = pose.squat * 2;
+      }
+      object.position.y = -0.59 * (1 - Math.cos(pose.squat));
+      if (joints.Head) joints.Head.rotation.z = pose.head;
+      if (joints.Chest) joints.Chest.rotation.z = pose.head * 0.3;
+      if (joints.Spine) joints.Spine.rotation.x = pose.squat * 0.2;
     } else if (m.routine === 'relax') {
       if (joints.ArmL) joints.ArmL.rotation.x = -1.1;
       if (joints.ArmR) joints.ArmR.rotation.x = -1.1;
@@ -208,6 +252,16 @@ function Avatar({
       if (joints.ArmR) joints.ArmR.rotation.z = 2.3;
       object.rotation.z = reduced ? 0 : Math.sin(m.time * 9) * 0.1;
       object.position.y += reduced ? 0 : Math.abs(Math.sin(m.time * 8)) * 0.16;
+    }
+    // Reserve an arm envelope for every free-standing animation, not just yoga.
+    // Authored seated interactions use their own cup/table contact targets.
+    if (m.armsBlocked && !m.seated && !m.viewing) {
+      for (const side of ['L', 'R']) {
+        joints['Arm' + side]?.rotation.set(0, 0, 0);
+        joints['Elbow' + side]?.rotation.set(0, 0, 0);
+        joints['Hand' + side]?.rotation.set(0, 0, 0);
+      }
+      object.rotation.z = 0;
     }
   });
   return (
@@ -476,7 +530,9 @@ export default function Companions({
       lastTourLabel.current = tour.current.label;
       setTourLabel(tour.current.label);
     }
-    const needsFrame = model.step(dt, direction);
+    const preparingStretch = routine === 'stretch' && !tour.current.active &&
+      !gesture.current && !target && !x && !z && !model.destination;
+    const needsFrame = model.step(dt, direction, preparingStretch ? STRETCH_SPACE : undefined);
     manualMovement.current =
       !autonomous.current && model.walkers[character].walking;
     if (model.walkers[character].walking && !autonomous.current)
@@ -494,6 +550,9 @@ export default function Companions({
         walker.position.z,
       );
       actor.rotation.y = walker.heading;
+      const other = model.walkers[id === 'sam' ? 'companion' : 'sam'].position;
+      motion.armsBlocked = Math.hypot(walker.position.x - other.x, walker.position.z - other.z) < STRETCH_SPACE ||
+        !hasStretchRoom(walker.position);
       motion.walking = walker.walking;
       motion.phase = walker.phase;
       motion.seated = ['work', 'tea', 'sleep'].includes(tour.current.phase);
@@ -531,7 +590,7 @@ export default function Companions({
       steering: keys.current.size > 0,
       viewing: false,
     });
-    const nextRoutine =
+    let nextRoutine =
       tour.current.phase === 'work'
         ? 'work'
         : tour.current.phase === 'sleep'
@@ -541,11 +600,17 @@ export default function Companions({
             : routine === 'sleep' || routine === 'work'
               ? undefined
               : rest.current.poseFor(routine);
+    if (nextRoutine === 'stretch') {
+      const a = model.walkers.sam.position, b = model.walkers.companion.position;
+      if (!preparingStretch || Math.hypot(a.x - b.x, a.z - b.z) < STRETCH_SPACE ||
+        !hasStretchRoom(a) || !hasStretchRoom(b)) nextRoutine = undefined;
+    }
     if (m0.current.routine !== nextRoutine) invalidate();
     for (const m of [m0.current, m1.current]) m.routine = nextRoutine;
-    if (restingRef.current !== isResting) {
-      restingRef.current = isResting;
-      setResting(isResting);
+    const showRest = isResting && (routine !== 'stretch' || nextRoutine === 'stretch');
+    if (restingRef.current !== showRest) {
+      restingRef.current = showRest;
+      setResting(showRest);
     }
     const seated = ['work', 'tea', 'sleep'].includes(tour.current.phase);
     if (!isResting && !seated) invalidate();

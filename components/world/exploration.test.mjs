@@ -54,7 +54,7 @@ test('a tour around all sides keeps both travellers moving safely and eventually
   for (const goal of [
     ...districts.map((d) => ({
       x: d.position[0],
-      z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65),
+      z: d.position[2] + (d.id === 'robotics' ? 2.7 : 1.65),
     })),
     SPAWN,
   ]) {
@@ -123,7 +123,7 @@ test('the expanded garden and every relocated district can be toured without cro
   const goals = [
     ...districts.map((d) => ({
       x: d.position[0],
-      z: d.position[2] + (d.id === 'robotics' ? 2.6 : 1.65),
+      z: d.position[2] + (d.id === 'robotics' ? 2.7 : 1.65),
     })),
     ...Object.values(GARDEN_SPOTS).map((p) => ({ x: p.x, z: p.z + 0.9 })),
     SPAWN,
@@ -170,4 +170,53 @@ test('turning back toward the companion makes space without crossing bodies or s
     }
   }
   assert.equal(simulate(model, 600), false);
+});
+
+test('stretch preparation separates the pair smoothly and stays settled', async () => {
+  const { STRETCH_SPACE } = await import('./exploration');
+  for (const active of ['sam', 'companion']) {
+    const model = new Exploration();
+    model.switchTo(active);
+    for (let i = 0; i < 240; i++) {
+      const before = Object.values(model.walkers).map(w => ({ ...w.position }));
+      model.step(1 / 60, { x: 0, z: 0 }, STRETCH_SPACE);
+      Object.values(model.walkers).forEach((w, index) => {
+        assert.ok(clearSegment(before[index], w.position));
+        assert.ok(Math.hypot(w.position.x-before[index].x, w.position.z-before[index].z) <= 2.65/60+1e-6);
+      });
+    }
+    const a = model.walkers.sam.position, b = model.walkers.companion.position;
+    assert.ok(Math.hypot(a.x-b.x, a.z-b.z) >= STRETCH_SPACE);
+    assert.equal(model.step(1/60, {x: 0, z: 0}, STRETCH_SPACE), false);
+    // Normal following resumes when the activity ends.
+    simulate(model, 240);
+    assert.ok(Math.hypot(model.walkers.sam.position.x-model.walkers.companion.position.x,
+      model.walkers.sam.position.z-model.walkers.companion.position.z) < 1.1);
+  }
+});
+
+test('coincident characters can separate instead of using a zero avoidance vector', async () => {
+  const { STRETCH_SPACE } = await import('./exploration');
+  const model = new Exploration();
+  model.walkers.companion.position = {...model.walkers.sam.position};
+  for (let i = 0; i < 240; i++) model.step(1/60, {x: 0, z: 0}, STRETCH_SPACE);
+  const a = model.walkers.sam.position, b = model.walkers.companion.position;
+  assert.ok(Math.hypot(a.x-b.x, a.z-b.z) >= STRETCH_SPACE);
+});
+
+test('stretch clearance rejects scenery even when the character center is walkable', async () => {
+  const { hasStretchRoom } = await import('./movement');
+  const { islandObstacles } = await import('./island-layout');
+  let checked = 0;
+  for (const obstacle of islandObstacles) {
+    for (let i = 0; i < 16; i++) {
+      const angle = i * Math.PI / 8;
+      const p = {x: obstacle.x + Math.cos(angle)*(obstacle.radius+.2),
+        z: obstacle.z + Math.sin(angle)*(obstacle.radius+.2)};
+      if (!walkable(p)) continue;
+      assert.equal(hasStretchRoom(p), false);
+      checked++;
+    }
+  }
+  assert.ok(checked > 0);
 });
