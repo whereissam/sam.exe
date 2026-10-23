@@ -1,5 +1,5 @@
 'use client';
-import { BEACON_SPOT, PASSPORT_POST, ROOM_PORTAL, harborHeight } from './island-layout';
+import { BEACON_SPOT, PASSPORT_POST, harborHeight } from './island-layout';
 import { oceanHorizon } from './OceanBackdrop';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Html, OrbitControls, Sparkles, useProgress } from '@react-three/drei';
@@ -21,6 +21,7 @@ import { DistrictModel } from './DistrictModel';
 import RoboticsLab from './RoboticsLab';
 import { GroundLabel } from './GroundLabel';
 import { Harbor, ExhibitBack } from './Harbor';
+import { HarborEntrances } from './HarborEntrances';
 import { IslandGarden } from './IslandGarden';
 import { Beacon, CollectibleSparks } from './Playground';
 import Companions, {
@@ -546,70 +547,6 @@ function PassportPost({
   );
 }
 
-/** A walk-through threshold into the private room, placed on the central island. */
-function RoomPortal({
-  player,
-  manualMovement,
-  paused,
-  onEnter,
-  onApproach,
-}: {
-  player: React.RefObject<Point>;
-  manualMovement: React.RefObject<boolean>;
-  paused: boolean;
-  onEnter: () => void;
-  onApproach: () => void;
-}) {
-  const [near, setNear] = useState(false);
-  const wasNear = useRef(false);
-  const entered = useRef(false);
-  const position = ROOM_PORTAL;
-  useFrame(() => {
-    if (paused) return;
-    const distance = Math.hypot(
-      player.current.x - position.x,
-      player.current.z - position.z,
-    );
-    const nextNear = distance < 1.45;
-    if (nextNear !== wasNear.current) {
-      wasNear.current = nextNear;
-      setNear(nextNear);
-    }
-    if (distance < 0.52 && !entered.current && manualMovement.current) {
-      entered.current = true;
-      onEnter();
-    }
-    if (distance > 1.1) entered.current = false;
-  });
-  return (
-    <group
-      position={[position.x, 0.12, position.z]}
-      rotation={[0, ROOM_PORTAL.rotation, 0]}
-      onClick={(event) => {
-        if (paused || event.delta > 5) return;
-        event.stopPropagation();
-        onApproach();
-      }}
-      onPointerOver={() => { if (!paused) document.body.style.cursor = 'pointer'; }}
-      onPointerOut={() => { document.body.style.cursor = ''; }}
-    >
-      <Box position={[-0.62, 1.05, 0]} size={[0.22, 2.1, 0.38]} color="#f0dcae" />
-      <Box position={[0.62, 1.05, 0]} size={[0.22, 2.1, 0.38]} color="#f0dcae" />
-      <Box position={[0, 2.05, 0]} size={[1.45, 0.22, 0.38]} color="#d7bd88" />
-      <Box position={[0, 1.02, 0.12]} size={[1.02, 1.82, 0.08]} color={near ? '#91d8bd' : '#538b94'} glow={near} />
-      <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.56, 0.64, 32]} />
-        <meshBasicMaterial color={near ? '#b7f5c4' : '#f6dc8c'} />
-      </mesh>
-      <Html center position={[0, 2.65, 0]} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-        <span className={`world-hint ${near ? 'is-near' : ''}`}>
-          {near ? 'Keep walking · enter the room' : 'Sam’s room'}
-        </span>
-      </Html>
-    </group>
-  );
-}
-
 // Wait for the asset manager and a rendered frame, including models that use
 // their own Suspense boundaries and would otherwise reveal an empty island.
 function SceneReady({ onReady, onProgress }: { onReady?: () => void; onProgress?: (progress: WorldLoadProgress) => void }) {
@@ -800,12 +737,12 @@ export default function World({
               onOpen={onPassport}
               touch={touch}
             />
-            <RoomPortal
+            <HarborEntrances
               player={playerPosition}
               manualMovement={manualMovement}
               paused={paused}
-              onEnter={onEnterRoom}
-              onApproach={() => setTarget({ x: 2.65, z: 1.7 })}
+              night={night}
+              onEnterRoom={onEnterRoom}
             />
             <CollectibleSparks
               allowProximity={manualMovement}

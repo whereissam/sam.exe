@@ -10,9 +10,14 @@ import {
   harborHeight,
   SCENERY_SPREAD,
   CLOCK_Z,
+  HARBOR_RADIUS,
+  HARBOR_STEPS,
+  HARBOR_STEP_WIDTH,
+  HARBOR_PLANTERS,
 } from './island-layout';
 import { GroundLabel } from './GroundLabel';
 import { OceanBackdrop } from './OceanBackdrop';
+import { clockHandAngles } from './clock-time';
 
 type Vec = [number, number, number];
 const colors = [
@@ -79,14 +84,86 @@ function HarborTree({ at, palm = false }: { at: Vec; palm?: boolean }) {
     </group>
   );
 }
+function ClockFace({ night, paused }: { night: boolean; paused: boolean }) {
+  const hour = useRef<THREE.Group>(null);
+  const minute = useRef<THREE.Group>(null);
+  const second = useRef<THREE.Group>(null);
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    const update = () => {
+      const angles = clockHandAngles(new Date());
+      if (hour.current) hour.current.rotation.z = angles.hour;
+      if (minute.current) minute.current.rotation.z = angles.minute;
+      if (second.current) second.current.rotation.z = angles.second;
+      invalidate();
+    };
+    update();
+    if (paused) return;
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [paused, invalidate]);
+  return (
+    <group position={[0, 2.7, 0.64]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.44, 0.44, 0.09, 32]} />
+        <meshStandardMaterial color="#9f8054" />
+      </mesh>
+      <mesh position={[0, 0, 0.051]}>
+        <circleGeometry args={[0.39, 32]} />
+        <meshStandardMaterial
+          color="#f7e8c2"
+          emissive="#e6bd75"
+          emissiveIntensity={night ? 0.4 : 0}
+        />
+      </mesh>
+      {Array.from({ length: 12 }, (_, i) => (
+        <group key={i} rotation={[0, 0, (-i * Math.PI) / 6]}>
+          <HarborBlock
+            at={[0, 0.329, 0.06]}
+            size={[i % 3 ? 0.018 : 0.032, i % 3 ? 0.045 : 0.075, 0.012]}
+            color="#665b46"
+          />
+        </group>
+      ))}
+      <group ref={hour}>
+        <HarborBlock
+          at={[0, 0.1, 0.082]}
+          size={[0.045, 0.23, 0.018]}
+          color="#485d58"
+        />
+      </group>
+      <group ref={minute}>
+        <HarborBlock
+          at={[0, 0.145, 0.105]}
+          size={[0.027, 0.32, 0.018]}
+          color="#485d58"
+        />
+      </group>
+      <group ref={second}>
+        <HarborBlock
+          at={[0, 0.12, 0.13]}
+          size={[0.012, 0.37, 0.012]}
+          color="#b97350"
+        />
+      </group>
+      <mesh position={[0, 0, 0.15]}>
+        <sphereGeometry args={[0.037, 10, 8]} />
+        <meshStandardMaterial color="#c19a57" />
+      </mesh>
+    </group>
+  );
+}
+
 function CanalHouse({
   color,
   night,
   tower = false,
+  paused = false,
 }: {
   color: string;
   night: boolean;
   tower?: boolean;
+  paused?: boolean;
 }) {
   const height = tower ? 3.25 : 2.05;
   return (
@@ -146,24 +223,7 @@ function CanalHouse({
             size={[0.35, 0.53, 0.055]}
             color="#71624d"
           />
-          {tower && (
-            <group position={[0, 2.7, 0.625]}>
-              <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <cylinderGeometry args={[0.32, 0.32, 0.045, 24]} />
-                <meshStandardMaterial color="#f6e6bc" />
-              </mesh>
-              <HarborBlock
-                at={[0, 0.07, 0.03]}
-                size={[0.035, 0.2, 0.025]}
-                color="#675334"
-              />
-              <HarborBlock
-                at={[0.08, 0, 0.031]}
-                size={[0.19, 0.035, 0.025]}
-                color="#675334"
-              />
-            </group>
-          )}
+          {tower && <ClockFace night={night} paused={paused} />}
         </group>
       ))}
       <HarborBlock
@@ -181,7 +241,7 @@ function Bridge({ bridge }: { bridge: (typeof harborBridges)[number] }) {
     dz = bridge.end.z - bridge.start.z;
   const distance = Math.hypot(dx, dz),
     gap = distance - bridge.start.radius - bridge.end.radius;
-  const rise = bridge.end.y - bridge.start.y,
+  const rise = bridge.end.y - bridge.startHeight,
     length = Math.hypot(gap, rise);
   const t = (bridge.start.radius + gap / 2) / distance;
   const pieces = useMemo(() => {
@@ -247,7 +307,7 @@ function Bridge({ bridge }: { bridge: (typeof harborBridges)[number] }) {
     <group
       position={[
         bridge.start.x + dx * t,
-        (bridge.start.y + bridge.end.y) / 2,
+        (bridge.startHeight + bridge.end.y) / 2,
         bridge.start.z + dz * t,
       ]}
       rotation={[0, Math.atan2(dx, dz), 0]}
@@ -535,6 +595,115 @@ function Waterfall({
     </group>
   );
 }
+/** Low, walkable paving gives the enlarged harbor a center and six clear exits. */
+function HarborCourtyard({ night }: { night: boolean }) {
+  return (
+    <group>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.012, 0.4]}
+        receiveShadow
+      >
+        <circleGeometry args={[2.45, 48]} />
+        <meshStandardMaterial color="#e5cda3" roughness={1} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, 0.4]}>
+        <ringGeometry args={[2.4, 2.48, 48]} />
+        <meshStandardMaterial color="#b99b70" roughness={1} />
+      </mesh>
+      {harborBridges
+        .filter((b) => b.start === harborIslands[0])
+        .map((bridge, i) => {
+          const angle = Math.atan2(bridge.end.x, bridge.end.z);
+          return (
+            <group key={i} rotation={[0, angle, 0]}>
+              {[3.0, 3.65, 4.3, 4.95, 5.6, 6.25].flatMap((distance, j) => {
+                // The north promenade forks around the clocktower.
+                const fork =
+                  bridge.end.x === 0 &&
+                  bridge.end.z < 0 &&
+                  distance >= 3.65 &&
+                  distance <= 5.6;
+                if (i === 0 && distance >= 4.6) return [];
+                return (fork ? [-1.35, 1.35] : [0]).map((x) => (
+                  <HarborBlock
+                    key={`${j}-${x}`}
+                    at={[x, 0.018, distance]}
+                    size={[fork ? 0.65 : 1.35, 0.025, 0.5]}
+                    color={j % 2 ? '#e9d8b7' : '#e3ccaa'}
+                  />
+                ));
+              })}
+              {i === 0 &&
+                HARBOR_STEPS.map((step, index) => (
+                  <group key={index}>
+                    <HarborBlock
+                      at={[0, step.height / 2, (step.from + step.to) / 2]}
+                      size={[
+                        HARBOR_STEP_WIDTH,
+                        step.height,
+                        step.to - step.from,
+                      ]}
+                      color={index % 2 ? '#d9c39c' : '#e6d1ad'}
+                    />
+                    <HarborBlock
+                      at={[0, step.height - 0.035, step.from + 0.025]}
+                      size={[HARBOR_STEP_WIDTH + 0.04, 0.07, 0.07]}
+                      color="#b5986f"
+                    />
+                  </group>
+                ))}
+              <HarborBlock
+                at={[0, bridge.startHeight + 0.028, HARBOR_RADIUS - 0.2]}
+                size={[1.65, 0.035, 0.16]}
+                color="#b99b70"
+              />
+            </group>
+          );
+        })}
+      {HARBOR_PLANTERS.map((p, i) => (
+        <group key={i} position={[p.x, 0, p.z]}>
+          <mesh position={[0, 0.17, 0]} castShadow receiveShadow>
+            <cylinderGeometry args={[0.6, 0.55, 0.34, 10]} />
+            <meshStandardMaterial color="#c4ad86" />
+          </mesh>
+          <mesh position={[0, 0.35, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[0.51, 10]} />
+            <meshStandardMaterial color="#81765a" />
+          </mesh>
+          {[-0.27, 0, 0.27].map((x, j) => (
+            <mesh
+              key={j}
+              position={[x, 0.54 + (j === 1 ? 0.15 : 0), 0]}
+              scale={[0.31, 0.36, 0.38]}
+              castShadow
+            >
+              <icosahedronGeometry args={[1, 1]} />
+              <meshStandardMaterial
+                color={j % 2 ? '#78936b' : '#a1af7c'}
+                flatShading
+              />
+            </mesh>
+          ))}
+          <HarborBlock
+            at={[0, 0.39, 0.44]}
+            size={[0.85, 0.1, 0.23]}
+            color="#ac845c"
+          />
+          <mesh position={[0, 0.8, 0]}>
+            <sphereGeometry args={[0.09, 8, 6]} />
+            <meshStandardMaterial
+              color="#efd39a"
+              emissive="#f4c371"
+              emissiveIntensity={night ? 1 : 0}
+            />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
 export function Harbor({
   night,
   paused,
@@ -639,12 +808,13 @@ export function Harbor({
           <Bridge key={i} bridge={b} />
         ))}
       </group>
+      <HarborCourtyard night={night} />
       <group position={[0, 0, CLOCK_Z]}>
-        <CanalHouse color="#e0b785" night={night} tower />
+        <CanalHouse color="#e0b785" night={night} paused={paused} tower />
       </group>
       <GroundLabel
         title="SAM / CURIOSITY HARBOR"
-        position={[0, 0.035, 3.7]}
+        position={[0, 0.035, 5.75]}
         width={3.3}
         dark={night}
       />

@@ -19,6 +19,8 @@ import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { TeaCup } from './TeaCup';
 import { teaPose, placeTeaHand } from './tea-motion';
 import { TeaTable } from './TeaTable';
+import { ConversationBubbles } from './ConversationBubbles';
+import { conversationHeading } from './conversation';
 import { ModelBoundary } from './DistrictModel';
 import { Rest, type DailyRoutine } from './daily-routine';
 import { stretchPose } from './stretch-motion';
@@ -42,6 +44,7 @@ export type Motion = {
   teaTime?: number;
   reach?: number;
   armsBlocked?: boolean;
+  conversing?: boolean;
 };
 const duration = { wave: 2.2, jump: 0.85, celebrate: 2.5 };
 
@@ -234,6 +237,7 @@ function Avatar({
         ? 0.2
         : Math.sin(clock.elapsedTime * 0.35) * 0.4;
     }
+    if (m.conversing && joints.Head) joints.Head.rotation.y = 0;
     if (m.viewing) {
       if (joints.ArmL) joints.ArmL.rotation.x = -1.3;
       if (joints.ArmR) joints.ArmR.rotation.x = -1.3;
@@ -383,6 +387,7 @@ export default function Companions({
   /** Hover-less pointers never reveal a label, so theirs stays on screen. */
   touch?: boolean;
 }) {
+  const conversationActive = useRef(false);
   const rest = useRef(new Rest());
   const tour = useRef(new AmbientTour());
   const [tourLabel, setTourLabel] = useState<string | null>(null);
@@ -537,6 +542,8 @@ export default function Companions({
       !autonomous.current && model.walkers[character].walking;
     if (model.walkers[character].walking && !autonomous.current)
       playSound('step');
+    const talking = conversationActive.current && !paused && !emotes && !gesture.current && !target && !x && !z &&
+      !model.walkers.sam.walking && !model.walkers.companion.walking;
     for (const [id, actor, motion] of [
       ['sam', sam.current, m0.current],
       ['companion', companion.current, m1.current],
@@ -549,8 +556,15 @@ export default function Companions({
           (['work', 'tea', 'sleep'].includes(tour.current.phase) ? -0.18 : 0),
         walker.position.z,
       );
-      actor.rotation.y = walker.heading;
       const other = model.walkers[id === 'sam' ? 'companion' : 'sam'].position;
+      motion.conversing = talking;
+      // Tea already faces the table: keep its authored cup/hand alignment intact.
+      if (talking && !['work', 'tea', 'sleep'].includes(tour.current.phase)) {
+        const nextHeading = conversationHeading(walker.heading, walker.position, other, dt, reduced);
+        if (Math.abs(nextHeading - walker.heading) > .0001) invalidate();
+        walker.heading = nextHeading;
+      }
+      actor.rotation.y = walker.heading;
       motion.armsBlocked = Math.hypot(walker.position.x - other.x, walker.position.z - other.z) < STRETCH_SPACE ||
         !hasStretchRoom(walker.position);
       motion.walking = walker.walking;
@@ -632,6 +646,7 @@ export default function Companions({
   });
   return (
     <>
+      <ConversationBubbles active={conversationActive} key={reset} sam={sam} companion={companion} samMotion={m0} companionMotion={m1} paused={paused || emotes || !!target} />
       <TeaTable
         working={tourLabel === 'Working together'}
         tea={tourLabel === 'Tea for two'}

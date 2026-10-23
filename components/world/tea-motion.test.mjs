@@ -55,3 +55,70 @@ test('both exported hands reach the cup handle throughout the actual drinking cy
     }
   }
 });
+
+// Exercise the exported skin, not just the wrist target: sleeves and fingers have volume.
+test('neither character’s arm surfaces cross the tabletop during reach, sip or release', async () => {
+  for (const url of Object.values(manifest)) {
+    const bytes = await readFile(
+      new URL('../../public' + url, import.meta.url),
+    );
+    const { scene } = await new GLTFLoader().parseAsync(
+      bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+      '',
+    );
+    scene.scale.setScalar(0.52);
+    const meshes = [];
+    scene.traverse((mesh) => {
+      if (!mesh.isSkinnedMesh) return;
+      const indices = mesh.geometry.attributes.skinIndex;
+      const weights = mesh.geometry.attributes.skinWeight;
+      const vertices = [];
+      for (let i = 0; i < indices.count; i++) {
+        if (
+          [0, 1, 2, 3].some(
+            (k) =>
+              weights.getComponent(i, k) > 0.1 &&
+              /Arm|Elbow|Hand/.test(
+                mesh.skeleton.bones[indices.getComponent(i, k)].name,
+              ),
+          )
+        )
+          vertices.push(i);
+      }
+      if (vertices.length) meshes.push({ mesh, vertices });
+    });
+    const point = new Vector3();
+    for (let frame = 0; frame <= TEA_CYCLE * 60; frame++) {
+      const t = frame / 60;
+      for (const side of ['L', 'R']) {
+        scene
+          .getObjectByName('Arm' + side)
+          .rotation.set(-0.12, 0, side === 'L' ? 0.52 : -0.52);
+        scene.getObjectByName('Elbow' + side).rotation.x = -0.6;
+        scene.getObjectByName('Hand' + side).rotation.x = -0.65;
+      }
+      const pose = teaPose(t);
+      scene.position.z = pose.lean;
+      placeTeaHand(
+        scene.getObjectByName('ArmR'),
+        scene.getObjectByName('ElbowR'),
+        scene.getObjectByName('HandR'),
+        [pose.hand[0], pose.hand[1], pose.hand[2] - pose.lean],
+        pose.grip,
+      );
+      scene.updateMatrixWorld(true);
+      for (const { mesh, vertices } of meshes) {
+        mesh.skeleton.update();
+        for (const i of vertices) {
+          mesh.getVertexPosition(i, point).applyMatrix4(mesh.matrixWorld);
+          // Table: radius .7, center height .52, thickness .055. Seated root: -.06.
+          const insideTop = point.x ** 2 + (point.z - 0.95) ** 2 < 0.7 ** 2;
+          assert.ok(
+            !(insideTop && point.y > 0.5525 && point.y < 0.6075),
+            `${url}: ${mesh.name} vertex ${i} intersects tabletop at ${t}s`,
+          );
+        }
+      }
+    }
+  }
+});

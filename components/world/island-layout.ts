@@ -1,9 +1,17 @@
+export const HARBOR_STEPS = [
+  { from: 4.6, to: 5.05, height: .12 },
+  { from: 5.05, to: 5.5, height: .24 },
+  { from: 5.5, to: 5.95, height: .36 },
+  { from: 5.95, to: 6.7, height: .48 },
+];
+export const HARBOR_STEP_WIDTH = 2.5;
 import { districts } from './districts';
 type Point = { x: number; z: number };
 export const ISLAND_TOP_RADIUS = 19.5;
 export const ISLAND_WALK_RADIUS = 19;
+export const HARBOR_RADIUS = 6.7;
 export const harborIslands = [
-  { x: 0, z: 0, y: 0, radius: 4.5 },
+  { x: 0, z: 0, y: 0, radius: HARBOR_RADIUS },
   ...districts.map((d) => ({
     x: d.position[0],
     y: d.position[1],
@@ -22,11 +30,12 @@ export const harborBridges = [
   start: harborIslands[a],
   end: harborIslands[b],
   width: 1.8,
+  startHeight: a === 0 && b === 1 ? .48 : harborIslands[a].y,
 }));
 export const GARDEN_SPOTS = {
   pond: { x: -14.1, z: -6.1, radius: 0.6 },
   windmill: { x: 14.2, z: -6.1, radius: 0.55 },
-  campfire: { x: -2.8, z: 0.6, radius: 0.55 },
+  campfire: { x: -4.5, z: 0.5, radius: 0.55 },
 };
 /** A canal house is a 1.35-unit square, so a circle through its faces (0.675)
  *  still leaves the corners open to walk through. This is the circle through
@@ -38,10 +47,19 @@ const BENCH_RADIUS = 0.42;
  *  Kept beside the obstacle list so a prop cannot be placed without a
  *  footprint — walking through a building is what happens otherwise. */
 export const SCENERY_SPREAD = 1.45;
-export const CLOCK_Z = -2.75;
-export const BEACON_SPOT = { x: 0.3, z: 2.65, radius: 0.48 };
-export const PASSPORT_POST = { x: -1.55, z: 1.95, radius: Math.hypot(.33, .07) };
-export const ROOM_PORTAL = { x: 2.65, z: 1.7, rotation: -.55 };
+export const CLOCK_Z = -4.65;
+export const BEACON_SPOT = { x: 0.3, z: 3.9, radius: 0.48 };
+export const PASSPORT_POST = { x: -1.75, z: 3.25, radius: Math.hypot(.33, .07) };
+export const HARBOR_ENTRANCES = [
+  { id: 'room', label: 'Sam’s room', subtitle: 'REST & RECHARGE', href: '/room', x: 4.65, z: .35, rotation: -.35, color: '#678d79', wall: '#e7c396' },
+] as const;
+export const ROOM_PORTAL = HARBOR_ENTRANCES[0];
+export function entrancePoint(entrance: (typeof HARBOR_ENTRANCES)[number], x: number, z: number) {
+  return {
+    x: entrance.x + x * Math.cos(entrance.rotation) + z * Math.sin(entrance.rotation),
+    z: entrance.z - x * Math.sin(entrance.rotation) + z * Math.cos(entrance.rotation),
+  };
+}
 // Mesh radius .7 plus enough that WALK_CLEARANCE keeps torsos off the tabletop.
 export const TEA_TABLE = { x: 0, z: 0.4, radius: 0.74 };
 export const TEA_SEATS = {
@@ -49,6 +67,7 @@ export const TEA_SEATS = {
   companion: { x: -0.95, z: 0.4 },
 };
 export const TEA_CHAIRS = Object.values(TEA_SEATS).map(seat => ({ ...seat, radius: .25 }));
+export const HARBOR_PLANTERS = [{ x: -2.8, z: 4.1, radius: .62 }, { x: 2.8, z: 4.1, radius: .62 }];
 const islandProps = [
   { x: 0, z: -2, radius: HOUSE_RADIUS },
   { x: 2.05, z: -1.15, radius: TREE_RADIUS },
@@ -57,15 +76,17 @@ const islandProps = [
   { x: -2.35, z: 0.5, radius: BENCH_RADIUS },
 ];
 export const islandObstacles = [
+  ...HARBOR_PLANTERS,
   TEA_TABLE,
   ...TEA_CHAIRS,
   PASSPORT_POST,
-  // Portal opening stays traversable; its two solid pillars do not.
-  ...[-1, 1].map(side => ({
-    x: ROOM_PORTAL.x + side * .62 * Math.cos(ROOM_PORTAL.rotation),
-    z: ROOM_PORTAL.z - side * .62 * Math.sin(ROOM_PORTAL.rotation),
-    radius: Math.hypot(.11, .19),
-  })),
+  // Cottage wings and rear wall; the porch remains open.
+  ...HARBOR_ENTRANCES.flatMap(entrance => [
+    ...[-1, 1].flatMap(side => [-.35, -.95].map(z => ({
+      ...entrancePoint(entrance, side * .86, z), radius: .43,
+    }))),
+    { ...entrancePoint(entrance, 0, -1.43), radius: .55 },
+  ]),
   BEACON_SPOT,
   ...districts.map((d) => ({
     x: d.position[0],
@@ -174,6 +195,11 @@ export const harborWaypoints = harborBridges.flatMap((b) =>
 
 /** The same elevations used by island decks and their sloping bridges. */
 export function harborHeight(p: Point) {
+  const stairCoordinates = bridgeCoordinates(p, harborBridges[0]);
+  if (Math.abs(stairCoordinates.across) <= HARBOR_STEP_WIDTH / 2 && stairCoordinates.along <= HARBOR_RADIUS) {
+    const step = HARBOR_STEPS.find(s => stairCoordinates.along >= s.from && stairCoordinates.along < s.to);
+    if (step) return step.height;
+  }
   const island = harborIslands.find(
     (i) => Math.hypot(p.x - i.x, p.z - i.z) <= i.radius,
   );
@@ -193,7 +219,7 @@ export function harborHeight(p: Point) {
             (c.length - bridge.start.radius - bridge.end.radius),
         ),
       );
-      return bridge.start.y + (bridge.end.y - bridge.start.y) * t;
+      return bridge.startHeight + (bridge.end.y - bridge.startHeight) * t;
     }
   }
   return 0;
