@@ -29,6 +29,7 @@ import Companions, {
   type Action,
 } from './Companions';
 
+import type { WorldLoadProgress } from './WorldLoader';
 import { walkable, SPAWN, type Point } from './movement';
 import {
   clampLevel,
@@ -611,8 +612,9 @@ function RoomPortal({
 
 // Wait for the asset manager and a rendered frame, including models that use
 // their own Suspense boundaries and would otherwise reveal an empty island.
-function SceneReady({ onReady }: { onReady?: () => void }) {
-  const active = useProgress((state) => state.active);
+function SceneReady({ onReady, onProgress }: { onReady?: () => void; onProgress?: (progress: WorldLoadProgress) => void }) {
+  const { active, loaded, total } = useProgress();
+  useEffect(() => { onProgress?.({ active, loaded, total }); }, [active, loaded, total, onProgress]);
   const invalidate = useThree((state) => state.invalidate);
   const notified = useRef(false);
   const frame = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
@@ -647,6 +649,7 @@ function CanvasFallback({ onReady }: { onReady?: () => void }) {
 export default function World({
   roaming = true,
   onReady,
+  onProgress,
   onSelect,
   onNear,
   keys,
@@ -673,6 +676,7 @@ export default function World({
   touch,
 }: {
   onReady?: () => void;
+  onProgress?: (progress: WorldLoadProgress) => void;
   roaming?: boolean;
   onSelect: (d: District) => void;
   onNear: (d: District | null) => void;
@@ -747,7 +751,7 @@ export default function World({
         shadow-normalBias={0.04}
       />
       <Suspense fallback={null}>
-        <SceneReady onReady={onReady} />
+        <SceneReady onReady={onReady} onProgress={onProgress} />
         <ReducedMotion.Provider value={reduced || lowPower}>
           <group position={[0, -0.8, 0]}>
             <Harbor
