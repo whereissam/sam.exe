@@ -1,5 +1,7 @@
 'use client';
 import { BEACON_SPOT, PASSPORT_POST, harborHeight } from './island-layout';
+import { GroundLabel } from './GroundLabel';
+import { safeCityCamera } from './city-camera';
 import { oceanHorizon } from './OceanBackdrop';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Float, Html, OrbitControls, Sparkles, useProgress } from '@react-three/drei';
@@ -19,7 +21,6 @@ import type { DailyRoutine } from './daily-routine';
 import RenderProbe from '../performance/RenderProbe';
 import { DistrictModel } from './DistrictModel';
 import RoboticsLab from './RoboticsLab';
-import { GroundLabel } from './GroundLabel';
 import { Harbor, ExhibitBack } from './Harbor';
 import { HarborEntrances } from './HarborEntrances';
 import { IslandGarden } from './IslandGarden';
@@ -46,8 +47,8 @@ import {
 const ReducedMotion = createContext(false);
 type Vec = [number, number, number];
 // Open from the front (+Z), so exhibits face the visitor on arrival and reset.
-const ISLAND_ENTRY_CAMERA: Vec = [0, 22, 30];
-const ISLAND_ENTRY_ZOOM_LEVEL = FITTED_LEVEL + 1;
+const ISLAND_ENTRY_CAMERA: Vec = [5, 32, 36];
+const ISLAND_ENTRY_ZOOM_LEVEL = FITTED_LEVEL;
 function Box({
   position = [0, 0, 0],
   size = [1, 1, 1],
@@ -97,7 +98,9 @@ function Installation({
   district,
   onSelect,
   night,
+  playerPosition,
 }: {
+  playerPosition: React.RefObject<Point>;
   night: boolean;
   district: District;
   onSelect: (d: District) => void;
@@ -105,30 +108,43 @@ function Installation({
   const { id, color, position } = district;
   const reduced = useContext(ReducedMotion);
   const [hovered, setHovered] = useState(false);
+  const [nearby, setNearby] = useState(false);
+  const [closeUp, setCloseUp] = useState(false);
+  useFrame(({ camera, size }) => {
+    const p = playerPosition.current;
+    const next = Math.abs(harborHeight(p) - position[1]) < 1 && Math.hypot(p.x - position[0], p.z - position[2]) < (nearby ? 5.2 : 4.4);
+    if (next !== nearby) setNearby(next);
+    // Readable close-ups reveal every floor sign, regardless of player distance.
+    const zoomRatio = camera.zoom / fittedZoom(size.width, size.height);
+    const nextCloseUp = zoomRatio >= (closeUp ? 1.7 : 2);
+    if (nextCloseUp !== closeUp) setCloseUp(nextCloseUp);
+  });
+  const showGroundLabel = nearby || closeUp;
+  const active = hovered || nearby;
+  const markerZ = id === 'robotics' ? 3.15 : 2.65;
+  useEffect(() => {
+    if (hovered) document.body.style.cursor = 'pointer';
+    return () => { document.body.style.cursor = ''; };
+  }, [hovered]);
   return (
-    <group position={position}>
-      <mesh position={[0, 0.02, 0]} receiveShadow>
-        <cylinderGeometry args={[1.8, 1.9, 0.22, 6]} />
+    <group position={position}
+      onClick={event => { event.stopPropagation(); if (event.delta <= 5) onSelect(district); }}
+      onPointerOver={event => { event.stopPropagation(); setHovered(true); }}
+      onPointerOut={() => setHovered(false)}
+    >
+      <mesh position={[0, 0.015, 0]} receiveShadow>
+        <cylinderGeometry args={[id === 'robotics' ? 2.4 : 1.86, id === 'robotics' ? 2.45 : 1.9, 0.19, 64]} />
         <meshStandardMaterial
-          color={hovered ? '#d5b56c' : '#b29357'}
+          color={active ? '#f2e7c9' : '#e1decb'}
           emissive={color}
-          emissiveIntensity={hovered ? 0.12 : 0}
+          emissiveIntensity={active ? 0.18 : 0}
         />
       </mesh>
-      <group
-        onClick={(e) => {
-          e.stopPropagation();
-          if (e.delta <= 5) onSelect(district);
-        }}
-        onPointerOver={() => {
-          document.body.style.cursor = 'pointer';
-          setHovered(true);
-        }}
-        onPointerOut={() => {
-          document.body.style.cursor = 'auto';
-          setHovered(false);
-        }}
-      >
+      <mesh position={[0, .117, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[id === 'robotics' ? 2.3 : 1.76, id === 'robotics' ? 2.36 : 1.82, 64]} />
+        <meshBasicMaterial color={active ? '#a16a2d' : '#b6a16e'} toneMapped={false} />
+      </mesh>
+      <group>
         {id === 'robotics' ? <RoboticsLab reduced={reduced} /> : <>
         <ExhibitBack id={id} />
         <DistrictModel id={id}>
@@ -285,19 +301,31 @@ function Installation({
         </DistrictModel>
         </>}
       </group>
-      <GroundLabel
-        title={district.title}
-        number={district.number}
-        position={[0, 0.16, id === 'robotics' ? 1.95 : 1.45]}
-        onClick={() => onSelect(district)}
-        dark={night}
-      />
+      {showGroundLabel && <GroundLabel title={district.title} width={3.4}
+        position={[0, .21, id === 'robotics' ? 2 : 1.5]}
+        dark={night} onClick={() => onSelect(district)} />}
+      {!showGroundLabel && <Html center distanceFactor={0.05} position={[0, .2, markerZ]} zIndexRange={[24, 20]} className={`district-marker-anchor district-marker-${id}`}>
+        <button
+          type="button"
+          className={`district-marker${active ? ' is-active' : ''}`}
+          aria-label={`${district.number} ${district.title} — 點擊探索`}
+          onPointerDown={event => event.stopPropagation()}
+          onPointerEnter={() => setHovered(true)}
+          onPointerLeave={() => setHovered(false)}
+          onFocus={() => setHovered(true)}
+          onBlur={() => setHovered(false)}
+          onClick={event => { event.stopPropagation(); onSelect(district); }}
+        >
+          <span className="district-marker-index">{district.number}</span>
+        </button>
+      </Html>}
     </group>
   );
 }
 type ZoomCommand = { direction: number; sequence: number };
 
 function CameraControls({
+  walkSequence,
   reset,
   paused,
   benchmarking,
@@ -306,6 +334,7 @@ function CameraControls({
   playerPosition,
   autonomous,
 }: {
+  walkSequence: number;
   reset: number;
   paused: boolean;
   benchmarking: boolean;
@@ -316,45 +345,42 @@ function CameraControls({
 }) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const { get, invalidate, size, gl } = useThree();
+  const keepCameraOutsideCity = useCallback(() => {
+    if (!controls.current) return;
+    const camera = get().camera;
+    const pose = safeCityCamera(camera.position, controls.current.target);
+    camera.position.set(pose.x, pose.y, pose.z);
+    if (camera.far !== pose.far) {
+      camera.far = pose.far;
+      camera.updateProjectionMatrix();
+    }
+    camera.updateMatrixWorld();
+  }, [get]);
   const following = useRef(false);
   const interacting = useRef(false);
   const lastPosition = useRef<Point>({ ...SPAWN });
   const followGoal = useRef(new THREE.Vector3());
   const followStep = useRef(new THREE.Vector3());
-  const districtFraming = useRef<{ id: District['id'] | null; aiming: boolean }>({ id: null, aiming: false });
-  const arrivalCamera = useRef(new THREE.Vector3());
+  const zoomFocus = useRef<'player' | 'overview' | null>(null);
   useFrame((_, dt) => {
     const p = playerPosition.current;
     const moved = Math.hypot(p.x - lastPosition.current.x, p.z - lastPosition.current.z) > 0.001;
     lastPosition.current = { ...p };
-    if (autonomous.current) { following.current = false; return; }
-    if (moved) following.current = true;
-    if (!controls.current || !following.current || interacting.current || paused || benchmarking) return;
-    const district = districts.reduce((nearest, candidate) =>
-      Math.hypot(p.x - candidate.position[0], p.z - candidate.position[2]) < Math.hypot(p.x - nearest.position[0], p.z - nearest.position[2]) ? candidate : nearest,
-    );
-    const center = district.position;
-    const distance = Math.hypot(p.x - center[0], p.z - center[2]);
-    if (distance > 6) districtFraming.current.id = null;
-    if (distance < 4.8 && districtFraming.current.id !== district.id) {
-      districtFraming.current = { id: district.id, aiming: true };
-      level.current = 6;
-      targetZoom.current = zoomForLevel(fitted.current, 6);
+    if (moved && !autonomous.current) following.current = true;
+    if (!controls.current || interacting.current || paused || benchmarking) return;
+    if (!zoomFocus.current && (!following.current || autonomous.current)) return;
+    // Zoom toward the traveller, including when they are standing still.
+    // Nearby exhibits must not steal the focus or change the user's zoom level.
+    if (zoomFocus.current === 'overview') followGoal.current.set(0, 2, -16);
+    else followGoal.current.set(p.x, harborHeight(p) + .7, p.z);
+    followStep.current.copy(followGoal.current).sub(controls.current.target).multiplyScalar(reduced ? 1 : 1 - Math.exp(-Math.min(dt, 0.05) * 6));
+    if (followStep.current.lengthSq() < 0.000001) {
+      if (zoomFocus.current === 'overview') zoomFocus.current = null;
+      return;
     }
-    const focus = Math.max(0, Math.min(1, (5 - distance) / 1.5));
-    followGoal.current.set(p.x + (center[0] - p.x) * focus, harborHeight(p) + 0.6 + focus * 0.4, p.z + (center[2] - p.z) * focus);
-    followStep.current.copy(followGoal.current).sub(controls.current.target).multiplyScalar(reduced ? 1 : 1 - Math.exp(-Math.min(dt, 0.05) * 4));
-    const camera = get().camera;
-    if (followStep.current.lengthSq() < 0.000001 && !districtFraming.current.aiming) return;
-    camera.position.add(followStep.current);
+    get().camera.position.add(followStep.current);
     controls.current.target.add(followStep.current);
-    if (districtFraming.current.aiming) {
-      // View each district from its front, instead of retaining the
-      // approach angle from a different island or a previous manual orbit.
-      arrivalCamera.current.copy(controls.current.target).add(new THREE.Vector3(4, 7, 12));
-      camera.position.lerp(arrivalCamera.current, reduced ? 1 : 1 - Math.exp(-Math.min(dt, 0.05) * 3));
-      if (camera.position.distanceTo(arrivalCamera.current) < 0.02) districtFraming.current.aiming = false;
-    }
+    keepCameraOutsideCity();
     controls.current.update();
     invalidate();
   });
@@ -364,6 +390,8 @@ function CameraControls({
   const zoomAt = useCallback(
     (next: number) => {
       level.current = clampLevel(next);
+      zoomFocus.current = level.current > FITTED_LEVEL ? 'player' : 'overview';
+      following.current = false;
       targetZoom.current = zoomForLevel(fitted.current, level.current);
       if (reduced) {
         const camera = get().camera;
@@ -396,7 +424,7 @@ function CameraControls({
   useEffect(() => {
     const camera = get().camera;
     following.current = false;
-    districtFraming.current = { id: null, aiming: false };
+    zoomFocus.current = null;
     lastPosition.current = { ...playerPosition.current };
     camera.position.set(...ISLAND_ENTRY_CAMERA);
     // The chrome above and below the island is a fixed ~160px on a tall
@@ -407,14 +435,22 @@ function CameraControls({
     level.current = ISLAND_ENTRY_ZOOM_LEVEL;
     targetZoom.current = camera.zoom;
     camera.updateProjectionMatrix();
-    controls.current?.target.set(0, 0, 0);
+    controls.current?.target.set(0, 2, -16);
+    keepCameraOutsideCity();
     controls.current?.update();
     invalidate();
-  }, [get, reset, size.width, size.height, invalidate, playerPosition]);
+  }, [get, reset, size.width, size.height, invalidate, playerPosition, keepCameraOutsideCity]);
   useEffect(() => {
     if (!zoomCommand.direction) return;
     zoomAt(level.current + (zoomCommand.direction > 0 ? 1 : -1));
   }, [zoomCommand, zoomAt]);
+  useEffect(() => {
+    if (!walkSequence) return;
+    // A deliberate destination click enters a readable walking view.
+    zoomAt(Math.max(level.current, 5));
+    zoomFocus.current = 'player';
+    following.current = true;
+  }, [walkSequence, zoomAt]);
   /** Wheel and pinch step through the same ladder, so zoom never lands between
    *  levels. OrbitControls' own continuous zoom stays off for that reason. */
   useEffect(() => {
@@ -464,7 +500,8 @@ function CameraControls({
     <OrbitControls
       ref={controls}
       makeDefault
-      onStart={() => { interacting.current = true; following.current = false; districtFraming.current.aiming = false; }}
+      onChange={keepCameraOutsideCity}
+      onStart={() => { interacting.current = true; following.current = false; zoomFocus.current = null; }}
       onEnd={() => { interacting.current = false; }}
       enablePan
       enableZoom={false}
@@ -641,6 +678,7 @@ export default function World({
   touch: boolean;
 }) {
   const [target, setTarget] = useState<Point | null>(null);
+  const [walkSequence, setWalkSequence] = useState(0);
   const playerPosition = useRef<Point>({ ...SPAWN });
   const autonomous = useRef(false);
   const manualMovement = useRef(false);
@@ -664,7 +702,7 @@ export default function World({
         position: ISLAND_ENTRY_CAMERA,
         zoom: lowPower ? 25 : 52,
         near: 0.1,
-        far: 150,
+        far: 250,
       }}
       gl={{
         antialias: !lowPower,
@@ -674,10 +712,10 @@ export default function World({
       <color attach="background" args={[night ? oceanHorizon.night : oceanHorizon.day]} />
       {perf && <RenderProbe sampling={benchmarking && !paused} />}
       <ambientLight intensity={night ? 0.65 : 1.2} />
-      <hemisphereLight args={['#fff0c3', '#8d7247', 1.6]} />
+      <hemisphereLight args={['#e7f5ff', '#78969e', 1.35]} />
       <directionalLight
         position={[-6, 12, 6]}
-        color="#ffd6b0"
+        color="#fff0d7"
         intensity={night ? 1 : 2}
         castShadow={!lowPower}
         shadow-mapSize={[2048, 2048]}
@@ -696,7 +734,10 @@ export default function World({
               paused={paused}
               reduced={reduced || lowPower}
               onWalk={(point) => {
-                if (walkable(point)) setTarget(point);
+                if (walkable(point)) {
+                  setTarget(point);
+                  setWalkSequence(value => value + 1);
+                }
               }}
             />
             <IslandGarden
@@ -708,6 +749,7 @@ export default function World({
               <Installation
                 key={d.id}
                 district={d}
+                playerPosition={playerPosition}
                 onSelect={onSelect}
                 night={night}
               />
@@ -781,6 +823,7 @@ export default function World({
         </ReducedMotion.Provider>
       </Suspense>
       <CameraControls
+        walkSequence={walkSequence}
         reset={reset}
         paused={paused}
         benchmarking={benchmarking}

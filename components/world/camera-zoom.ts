@@ -1,7 +1,7 @@
 /** Zoom levels, as multiples of the zoom that fits the island to the viewport.
  *  Relative rather than absolute so the fitted level frames the island on every
  *  screen, from a short laptop window to a tall phone. */
-export const ZOOM_LEVELS = [0.55, 0.75, 1, 1.4, 2, 2.9, 4.2, 8];
+export const ZOOM_LEVELS = [0.55, 0.75, 1, 1.4, 2, 2.9, 4.2, 12];
 export const FITTED_LEVEL = 2;
 // Leave room below the fitted view for both overview rungs on narrow screens.
 export const ZOOM_MIN = 2;
@@ -17,7 +17,7 @@ export const PINCH_PER_LEVEL = 1.22;
  *  a formula the scene has since moved on from. */
 export function fittedZoom(width: number, height: number) {
   const reserved = Math.min(160, height * 0.2);
-  return Math.max(4, Math.min(width / 49, (height - reserved) / 37, 75));
+  return Math.max(4, Math.min(width / 60, (height - reserved) / 48, 75));
 }
 
 const clamp = (value: number, low: number, high: number) =>

@@ -16,7 +16,6 @@ import {
   cameraRelative,
   nearestDistrict,
   SPAWN,
-  ISLAND_RADIUS,
 } from './movement.ts';
 test('spawn is reachable ground and starts outside an interaction zone', () => {
   assert.ok(walkable(SPAWN));
@@ -28,16 +27,17 @@ test('forward follows the camera and diagonal movement has no speed boost', () =
   assert.ok(Math.abs(Math.hypot(diagonal.x, diagonal.z) - 1) < 1e-9);
 });
 test('island edge, installations, pond, windmill and campfire cannot be entered', () => {
-  assert.equal(walkable({ x: ISLAND_RADIUS + 0.1, z: 0 }), false);
+  assert.equal(walkable({ x: 28, z: 0 }), false);
   for (const obstacle of islandObstacles)
     assert.equal(walkable({ x: obstacle.x, z: obstacle.z }), false);
-  const travel = harborIslands.at(-1);
-  const edge = { x: 0, z: travel.z + travel.radius - 0.1 };
+  const edge = { x: 0, z: 8.9 };
   assert.ok(walkable(edge));
   assert.deepEqual(advance(edge, { x: 0, z: 0.2 }), edge);
 });
 test('diagonal collision keeps movement on the unobstructed axis', () => {
-  const z = districts.find((d) => d.id === 'travel').position[2];
+  const z = districts.find((d) => d.id === 'travel').position[2] + 1.3;
+  // Approach the plinth below the gate piers, with a free tangential axis.
+  assert.ok(walkable({ x: 1.65, z }));
   const next = advance({ x: 1.65, z }, { x: -0.2, z: 0.2 });
   assert.deepEqual(next, { x: 1.65, z: z + 0.2 });
   assert.ok(walkable(next));
@@ -51,8 +51,8 @@ test('only nearby districts prompt the traveller', () => {
 });
 
 test('canals cannot be crossed by walking or a straight shortcut', () => {
-  assert.equal(walkable({ x: 6, z: 6 }), false);
-  assert.equal(landCoversSegment({ x: 2, z: 2 }, { x: 6.8, z: 7.2 }), false);
+  assert.equal(walkable({ x: 0, z: -3 }), false);
+  assert.equal(landCoversSegment({ x: 0, z: -1 }, { x: 0, z: -6 }), false);
 });
 test('island heights and every bridge ramp join continuously', () => {
   for (const island of harborIslands)
@@ -83,15 +83,19 @@ test('island heights and every bridge ramp join continuously', () => {
   }
 });
 
-test('buildings and scenery cannot be walked into from any angle', () => {
-  // A canal house sits on each district island, plus the central clock tower.
+test('former decorative house sites are open for walking', () => {
+  // Some old sites now fall in a canal, so check for colliders rather than land.
+  for (const district of districts) {
+    const site = { x: district.position[0], z: district.position[2] - 2 * SCENERY_SPREAD };
+    assert.ok(!islandObstacles.some(
+      (o) => Math.hypot(site.x - o.x, site.z - o.z) < o.radius,
+    ), `${district.id} still has an invisible house obstacle`);
+  }
+});
+
+test('the clock tower cannot be walked into from any angle', () => {
   const buildings = [
     { name: 'clock tower', x: 0, z: CLOCK_Z },
-    ...districts.map((d) => ({
-      name: `${d.id} house`,
-      x: d.position[0],
-      z: d.position[2] - 2 * SCENERY_SPREAD,
-    })),
   ];
   for (const building of buildings) {
     // Sample the whole 1.35-unit square footprint, corners included. A circle
@@ -178,16 +182,13 @@ test('ordinary movement cannot enter chairs or use the seated table clearance', 
 });
 
 
-test('harbor stair treads raise the traveller to the bridge landing', async () => {
-  const { HARBOR_STEPS, HARBOR_RADIUS } = await import('./island-layout');
-  const bridge = harborBridges[0];
-  const length = Math.hypot(bridge.end.x, bridge.end.z);
-  const point = (along) => ({ x: bridge.end.x * along / length, z: bridge.end.z * along / length });
-  for (const step of HARBOR_STEPS) {
-    const p = point((step.from + step.to) / 2);
-    assert.ok(walkable(p));
-    assert.equal(harborHeight(p), step.height);
+test('city stairs join each terrace without height jumps or canal shortcuts', () => {
+  for (const bridge of harborBridges) {
+    for (let i = 0; i <= 30; i++) {
+      const t = i / 30;
+      const p = { x: bridge.start.x + t * (bridge.end.x - bridge.start.x), z: bridge.start.z + t * (bridge.end.z - bridge.start.z) };
+      assert.ok(walkable(p));
+      assert.ok(Math.abs(harborHeight(p) - (bridge.start.y + t * (bridge.end.y - bridge.start.y))) < 1e-8);
+    }
   }
-  assert.equal(harborHeight(point(4.5)), 0);
-  assert.ok(Math.abs(harborHeight(point(HARBOR_RADIUS - .001)) - harborHeight(point(HARBOR_RADIUS + .001))) < .001);
 });

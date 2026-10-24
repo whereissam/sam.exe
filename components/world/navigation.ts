@@ -1,3 +1,5 @@
+import { CITY_RAILS } from './city-layout';
+import { boxCorners } from './solid-box';
 import { harborWaypoints } from './island-layout';
 import { clearSegment, walkable, obstacleClearance, collisionObstacles, type Point } from './movement';
 
@@ -10,10 +12,11 @@ function islandGraph(seating = false) {
   // A circumscribed polygon leaves clearance even along adjacent straight edges.
   const points = [
     ...harborWaypoints,
+    ...CITY_RAILS.flatMap(box => boxCorners(box, .26)),
     ...collisionObstacles(seating).flatMap((d) =>
-      Array.from({ length: 24 }, (_, i) => {
-        const angle = (i * Math.PI * 2) / 24,
-          radius = d.radius + obstacleClearance(d, seating) + 0.055;
+      Array.from({ length: 12 }, (_, i) => {
+        const angle = (i * Math.PI * 2) / 12,
+          radius = (d.radius + obstacleClearance(d, seating)) / Math.cos(Math.PI / 12) + 0.025;
         return {
           x: d.x + Math.cos(angle) * radius,
           z: d.z + Math.sin(angle) * radius,

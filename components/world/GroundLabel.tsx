@@ -11,6 +11,7 @@ export function GroundLabel({
   onClick,
   width = 2.9,
   dark = false,
+  variant = 'sign',
 }: {
   title: string;
   number?: string;
@@ -18,6 +19,7 @@ export function GroundLabel({
   onClick?: () => void;
   width?: number;
   dark?: boolean;
+  variant?: 'sign' | 'inlay';
 }) {
   const [focused, setFocused] = useState(false);
   const texture = useMemo(() => {
@@ -25,6 +27,21 @@ export function GroundLabel({
     canvas.width = 1024;
     canvas.height = 200;
     const ctx = canvas.getContext('2d')!;
+    if (variant === 'inlay') {
+      // A quiet limestone inscription, with a small oxidized-bronze index.
+      ctx.fillStyle = dark ? '#34494c' : '#e6e3d5';
+      ctx.fillRect(0, 0, 1024, 200);
+      ctx.fillStyle = dark ? '#ddc899' : '#8b7450';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.font = '500 98px Georgia, serif';
+      ctx.fillText(number ?? '', 98, 102);
+      ctx.fillRect(193, 58, 2, 84);
+      ctx.fillStyle = dark ? '#ede9d7' : '#3e595b';
+      ctx.textAlign = 'left';
+      ctx.font = '500 57px sans-serif';
+      ctx.fillText(title, 235, 105, 740);
+    } else {
     ctx.fillStyle = dark ? '#4d4835' : '#f1dfae';
     ctx.beginPath();
     ctx.roundRect(0, 0, 1024, 200, 24);
@@ -39,11 +56,12 @@ export function GroundLabel({
     ctx.textAlign = 'center';
     ctx.font = '500 58px sans-serif';
     ctx.fillText(`${number ? number + '  /  ' : ''}${title}`, 512, 103, 935);
+    }
     const result = new THREE.CanvasTexture(canvas);
     result.colorSpace = THREE.SRGBColorSpace;
     result.anisotropy = 4;
     return result;
-  }, [title, number, dark]);
+  }, [title, number, dark, variant]);
   useEffect(() => () => texture.dispose(), [texture]);
   return (
     <group position={position}>

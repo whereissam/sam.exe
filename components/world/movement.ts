@@ -1,3 +1,5 @@
+import { CITY_RAILS } from './city-layout';
+import { boxContains, boxBlocksSegment } from './solid-box';
 import { districts } from './districts';
 import {
   islandObstacles,
@@ -10,7 +12,7 @@ import {
 export type Point = { x: number; z: number };
 export const SPAWN: Point = { x: 0, z: 2 };
 export const ISLAND_RADIUS = ISLAND_WALK_RADIUS;
-export const INSTALLATION_RADIUS = 1.4;
+export const INSTALLATION_RADIUS = 1.9;
 // Standing torso/head footprint, not a point moving through the scene.
 export const WALK_CLEARANCE = 0.20;
 // The table's authored seat interaction places knees below the tabletop.
@@ -22,6 +24,7 @@ export function walkable(p: Point, seating = false) {
     Number.isFinite(p.x) &&
     Number.isFinite(p.z) &&
     onHarborLand(p) &&
+    !CITY_RAILS.some(box => boxContains(p, box, WALK_CLEARANCE)) &&
     !collisionObstacles(seating).some(
       (o) => Math.hypot(p.x - o.x, p.z - o.z) < o.radius + obstacleClearance(o, seating),
     )
@@ -29,7 +32,7 @@ export function walkable(p: Point, seating = false) {
 }
 // Routes must remain on an island or bridge for the entire segment.
 export function clearSegment(a: Point, b: Point, seating = false) {
-  if (!walkable(a, seating) || !walkable(b, seating) || !landCoversSegment(a, b)) return false;
+  if (!walkable(a, seating) || !walkable(b, seating) || !landCoversSegment(a, b) || CITY_RAILS.some(box => boxBlocksSegment(a, b, box, WALK_CLEARANCE))) return false;
   const dx = b.x - a.x,
     dz = b.z - a.z,
     lengthSquared = dx * dx + dz * dz;
@@ -82,7 +85,7 @@ export function cameraRelative(x: number, z: number, forward: Point): Point {
 /** Conservative clearance for fully extended arms and the mat. */
 export function hasStretchRoom(p: Point) {
   const radius = 0.68;
-  if (!walkable(p) || islandObstacles.some(
+  if (!walkable(p) || CITY_RAILS.some(box => boxContains(p, box, WALK_CLEARANCE + radius)) || islandObstacles.some(
     o => Math.hypot(p.x - o.x, p.z - o.z) < o.radius + WALK_CLEARANCE + radius,
   )) return false;
   for (let i = 0; i < 24; i++) {

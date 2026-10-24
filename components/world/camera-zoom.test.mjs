@@ -131,15 +131,15 @@ test('the ladder still spans from wider than the island to close up', () => {
   );
 });
 
-test('the expanded archipelago fits inside narrow and short viewports', () => {
+test('the canal city and fountain skyline fit inside narrow and short viewports', () => {
   for (const [width, height] of viewports) {
     const zoom = fittedZoom(width, height);
     assert.ok(
-      49 * zoom <= width + 0.001,
+      60 * zoom <= width + 0.001,
       `${width}x${height}: islands clipped horizontally`,
     );
     assert.ok(
-      37 * zoom <= height - Math.min(160, height * 0.2) + 0.001,
+      48 * zoom <= height - Math.min(160, height * 0.2) + 0.001,
       `${width}x${height}: islands clipped vertically`,
     );
   }

@@ -30,8 +30,8 @@ function simulate(model, steps = 2000, direction = { x: 0, z: 0 }) {
 }
 test('tap routes go around buildings instead of timing out at their front', () => {
   const [x, , z] = districts[3].position;
-  const start = { x: x - 2, z },
-    goal = { x: x + 2, z };
+  const start = { x: x - 2.3, z },
+    goal = { x: x + 2.3, z };
   assert.equal(clearSegment(start, goal), false);
   const route = planRoute(start, goal);
   assert.ok(route && route.length > 1);
@@ -54,7 +54,7 @@ test('a tour around all sides keeps both travellers moving safely and eventually
   for (const goal of [
     ...districts.map((d) => ({
       x: d.position[0],
-      z: d.position[2] + (d.id === 'robotics' ? 2.7 : 1.65),
+      z: d.position[2] + (d.id === 'robotics' ? 2.7 : 2.2),
     })),
     SPAWN,
   ]) {
@@ -74,7 +74,7 @@ test('switching cancels the old destination without teleporting or retaining a l
   assert.equal(
     model.goTo({
       x: districts[3].position[0],
-      z: districts[3].position[2] + 1.65,
+      z: districts[3].position[2] + 2.2,
     }),
     true,
   );
@@ -92,7 +92,7 @@ test('keyboard input cancels tap navigation, and reset retains the chosen travel
   assert.equal(
     model.goTo({
       x: districts[3].position[0],
-      z: districts[3].position[2] + 1.65,
+      z: districts[3].position[2] + 2.2,
     }),
     true,
   );
@@ -123,9 +123,9 @@ test('the expanded garden and every relocated district can be toured without cro
   const goals = [
     ...districts.map((d) => ({
       x: d.position[0],
-      z: d.position[2] + (d.id === 'robotics' ? 2.7 : 1.65),
+      z: d.position[2] + (d.id === 'robotics' ? 2.7 : 2.2),
     })),
-    ...Object.values(GARDEN_SPOTS).map((p) => ({ x: p.x, z: p.z + 0.9 })),
+    ...Object.values(GARDEN_SPOTS).map((p) => ({ x: p.x, z: p.z + p.radius + .35 })),
     SPAWN,
   ];
   for (const goal of goals) {
