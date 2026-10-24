@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import { HarborBlock as Block } from './Harbor';
 import { GroundLabel } from './GroundLabel';
-import { HARBOR_ENTRANCES } from './island-layout';
+import { HARBOR_ENTRANCES, harborHeight } from './island-layout';
 import type { Point } from './movement';
 
 type Entrance = (typeof HARBOR_ENTRANCES)[number];
@@ -56,7 +56,7 @@ function EntranceHouse({
     if (!paused) onEnter();
   };
   return (
-    <group position={[e.x, 0, e.z]} rotation={[0, e.rotation, 0]}>
+    <group position={[e.x, harborHeight(e), e.z]} rotation={[0, e.rotation, 0]}>
       <group
         onClick={(event) => {
           if (event.delta > 5 || paused) return;

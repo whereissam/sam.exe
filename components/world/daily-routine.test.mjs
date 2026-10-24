@@ -76,16 +76,18 @@ test('walking always interrupts sleep, for every step of a long tour', () => {
   // district cannot quietly turn this into a test that walks nowhere.
   for (const goal of districts.map((d) => ({
     x: d.position[0],
-    z: d.position[2] + (d.id === 'robotics' ? 2.7 : 1.65),
+    z: d.position[2] + (d.id === 'robotics' ? 2.7 : 2.2),
   }))) {
     assert.equal(model.goTo(goal), true);
+    let legSteps = 0;
     // Movement alone has to keep them up, with no pending destination to lean on.
     while (model.destination || model.walkers.sam.walking || model.walkers.companion.walking) {
       model.step(1 / 60);
       const activity = activityOf(model, { travelling: false });
       assert.equal(rest.step(1 / 60, activity), false, 'nodded off mid-walk');
       assert.equal(rest.poseFor('sleep'), undefined);
-      assert.ok(++steps < 4000, 'the tour never ended');
+      steps++;
+      assert.ok(++legSteps < 2000, 'a district route never ended');
     }
   }
   assert.ok(

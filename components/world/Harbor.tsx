@@ -1,33 +1,21 @@
 'use client';
 import { playSound } from '../audio/sound';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import type { District } from './districts';
 import {
-  harborIslands,
-  harborBridges,
   harborHeight,
-  SCENERY_SPREAD,
   CLOCK_Z,
-  HARBOR_RADIUS,
-  HARBOR_STEPS,
-  HARBOR_STEP_WIDTH,
   HARBOR_PLANTERS,
 } from './island-layout';
 import { GroundLabel } from './GroundLabel';
+import { CITY_TREES } from './city-layout';
+import { CanalCity } from './CanalCity';
 import { OceanBackdrop } from './OceanBackdrop';
 import { clockHandAngles } from './clock-time';
 
 type Vec = [number, number, number];
-const colors = [
-  '#8caea0',
-  '#dda477',
-  '#9cacca',
-  '#d8ae97',
-  '#b9bf91',
-  '#78aaa9',
-];
 export function HarborBlock({
   at,
   size,
@@ -234,98 +222,6 @@ function CanalHouse({
     </group>
   );
 }
-type BridgePiece = { at: Vec; size: Vec; color: string };
-function Bridge({ bridge }: { bridge: (typeof harborBridges)[number] }) {
-  const mesh = useRef<THREE.InstancedMesh>(null);
-  const dx = bridge.end.x - bridge.start.x,
-    dz = bridge.end.z - bridge.start.z;
-  const distance = Math.hypot(dx, dz),
-    gap = distance - bridge.start.radius - bridge.end.radius;
-  const rise = bridge.end.y - bridge.startHeight,
-    length = Math.hypot(gap, rise);
-  const t = (bridge.start.radius + gap / 2) / distance;
-  const pieces = useMemo(() => {
-    const start = -length / 2,
-      sides = [-(bridge.width / 2 + 0.165), bridge.width / 2 + 0.165];
-    const blocks: BridgePiece[] = [
-      {
-        at: [0, -0.1, 0],
-        size: [bridge.width + 0.3, 0.2, length + 0.25],
-        color: '#ead4ac',
-      },
-    ];
-    const count = Math.max(3, Math.ceil(length / 0.4));
-    for (let i = 0; i < count; i++) {
-      const z = start + (i * length) / (count - 1);
-      blocks.push({
-        at: [0, 0.008, z],
-        size: [bridge.width + 0.22, 0.015, 0.03],
-        color: '#bb9670',
-      });
-      for (const x of sides)
-        blocks.push({
-          at: [x, 0.26, z],
-          size: [0.1, 0.52, 0.1],
-          color: '#e6cfaa',
-        });
-    }
-    for (const x of sides) {
-      blocks.push({
-        at: [x, 0.52, 0],
-        size: [0.12, 0.12, length],
-        color: '#efdbb5',
-      });
-      for (let i = 0; i < 5; i++)
-        blocks.push({
-          at: [x, -0.55 - Math.abs(i - 2) * 0.1, start + (length * i) / 4],
-          size: [
-            0.22,
-            0.75 - Math.sin((i * Math.PI) / 4) * 0.6,
-            length / 4 + 0.02,
-          ],
-          color: '#c1a587',
-        });
-    }
-    return blocks;
-  }, [bridge.width, length]);
-  useLayoutEffect(() => {
-    if (!mesh.current) return;
-    const transform = new THREE.Object3D();
-    pieces.forEach((piece, i) => {
-      transform.position.set(...piece.at);
-      transform.scale.set(...piece.size);
-      transform.updateMatrix();
-      mesh.current!.setMatrixAt(i, transform.matrix);
-      mesh.current!.setColorAt(i, new THREE.Color(piece.color));
-    });
-    mesh.current.instanceMatrix.needsUpdate = true;
-    if (mesh.current.instanceColor)
-      mesh.current.instanceColor.needsUpdate = true;
-    mesh.current.computeBoundingSphere();
-  }, [pieces]);
-  return (
-    <group
-      position={[
-        bridge.start.x + dx * t,
-        (bridge.startHeight + bridge.end.y) / 2,
-        bridge.start.z + dz * t,
-      ]}
-      rotation={[0, Math.atan2(dx, dz), 0]}
-    >
-      <group rotation={[-Math.atan2(rise, gap), 0, 0]}>
-        <instancedMesh
-          ref={mesh}
-          args={[undefined, undefined, pieces.length]}
-          castShadow
-          receiveShadow
-        >
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial roughness={0.85} />
-        </instancedMesh>
-      </group>
-    </group>
-  );
-}
 function Boat({ paused, reduced }: { paused: boolean; reduced: boolean }) {
   const [sailing, setSailing] = useState(false),
     boat = useRef<THREE.Group>(null),
@@ -377,7 +273,7 @@ function Boat({ paused, reduced }: { paused: boolean; reduced: boolean }) {
       </group>
       <GroundLabel
         title={sailing ? 'Harbor boat · moor' : 'Harbor boat · sail'}
-        position={[0, harborHeight({ x: 0, z: 17.7 }) + 0.025, 17.7]}
+        position={[0, harborHeight({ x: 0, z: 7.5 }) + 0.025, 7.5]}
         width={2.3}
         onClick={() => {
           if (!paused) {
@@ -465,136 +361,6 @@ export function ExhibitBack({ id }: { id: District['id'] }) {
     );
   return null;
 }
-/** Irregular rings share vertices: a sandy rim, broken strata and an offset rock tip. */
-function IslandRock({ radius, seed }: { radius: number; seed: number }) {
-  const geometry = useMemo(() => {
-    const rings = [
-      { y: 0, r: 1, offset: 0 },
-      { y: -0.35, r: 1.05, offset: 0.05 },
-      { y: -1.15 - (seed % 3) * 0.25, r: 0.93, offset: -0.18 },
-      { y: -2.1 - (seed % 2) * 0.55, r: 0.67, offset: 0.3 },
-      { y: -3.5 - (seed % 3) * 0.45, r: 0.035, offset: -0.7 },
-    ];
-    const vertices: number[] = [],
-      shades: number[] = [];
-    const palette = ['#ead09b', '#b7a386', '#7a8088', '#596776'];
-    const point = (ring: number, j: number) => {
-      const angle = (j * Math.PI) / 7;
-      const uneven = 1 + 0.06 * Math.sin(j * 7.31 + seed * 4.7);
-      const layer = rings[ring];
-      return [
-        Math.cos(angle) * (radius + 0.55) * layer.r * uneven + layer.offset,
-        layer.y - (ring > 1 ? 0.18 * Math.sin(j * 2.3 + seed) : 0),
-        Math.sin(angle) * (radius + 0.55) * layer.r * uneven,
-      ];
-    };
-    const tri = (a: number[], b: number[], c: number[], color: string) => {
-      vertices.push(...a, ...b, ...c);
-      const shade = new THREE.Color(color);
-      for (let k = 0; k < 3; k++) shades.push(shade.r, shade.g, shade.b);
-    };
-    for (let j = 0; j < 14; j++) {
-      tri([0, 0, 0], point(0, j + 1), point(0, j), '#eddaa9');
-      for (let r = 0; r < rings.length - 1; r++) {
-        tri(point(r, j), point(r, j + 1), point(r + 1, j), palette[r]);
-        tri(point(r, j + 1), point(r + 1, j + 1), point(r + 1, j), palette[r]);
-      }
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(shades, 3));
-    g.computeVertexNormals();
-    return g;
-  }, [radius, seed]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  return (
-    <group>
-      <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial
-          vertexColors
-          flatShading
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-      {[0, 1, 2].map((i) => (
-        <mesh
-          key={i}
-          position={[
-            Math.cos(i * 2.5 + seed) * 1.8,
-            -3.5 - i * 0.55,
-            Math.sin(i * 2.5 + seed) * 1.8,
-          ]}
-          rotation={[i * 0.3, seed, 0.4]}
-          scale={[0.38, 0.6, 0.45]}
-          castShadow
-        >
-          <icosahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial
-            color={i % 2 ? '#8b8e90' : '#b5a88c'}
-            flatShading
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-function Waterfall({
-  radius,
-  drop,
-  paused,
-  reduced,
-}: {
-  radius: number;
-  drop: number;
-  paused: boolean;
-  reduced: boolean;
-}) {
-  const streaks = useRef<THREE.Group>(null);
-  useFrame(({ clock }) => {
-    if (streaks.current && !paused && !reduced)
-      streaks.current.position.y = -((clock.elapsedTime * 0.9) % 0.65);
-  });
-  return (
-    <group rotation={[0, -Math.PI / 2, 0]}>
-      <mesh position={[0, -drop / 2, radius + 0.28]}>
-        <boxGeometry args={[0.65, drop, 0.12]} />
-        <meshStandardMaterial
-          color="#9de0dc"
-          transparent
-          opacity={0.76}
-          emissive="#448d9b"
-          emissiveIntensity={0.15}
-        />
-      </mesh>
-      <group ref={streaks}>
-        {Array.from(
-          { length: Math.max(1, Math.floor((drop - 0.7) / 0.65)) },
-          (_, i) => (
-            <HarborBlock
-              key={i}
-              at={[i % 2 ? 0.15 : -0.12, -0.2 - i * 0.65, radius + 0.36]}
-              size={[0.08, 0.3, 0.02]}
-              color="#e4faf0"
-            />
-          ),
-        )}
-      </group>
-      <mesh
-        position={[0, -drop + 0.12, radius + 0.35]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        scale={[1, 0.55, 1]}
-      >
-        <circleGeometry args={[0.72, 12]} />
-        <meshStandardMaterial color="#d7f4e8" transparent opacity={0.7} />
-      </mesh>
-      <HarborBlock
-        at={[0, 0.015, radius - 0.3]}
-        size={[0.65, 0.035, 1.1]}
-        color="#93d1c8"
-      />
-    </group>
-  );
-}
 /** Low, walkable paving gives the enlarged harbor a center and six clear exits. */
 function HarborCourtyard({ night }: { night: boolean }) {
   return (
@@ -605,62 +371,12 @@ function HarborCourtyard({ night }: { night: boolean }) {
         receiveShadow
       >
         <circleGeometry args={[2.45, 48]} />
-        <meshStandardMaterial color="#e5cda3" roughness={1} />
+        <meshStandardMaterial color="#ece7d8" roughness={1} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, 0.4]}>
         <ringGeometry args={[2.4, 2.48, 48]} />
-        <meshStandardMaterial color="#b99b70" roughness={1} />
+        <meshStandardMaterial color="#94aeb5" roughness={1} />
       </mesh>
-      {harborBridges
-        .filter((b) => b.start === harborIslands[0])
-        .map((bridge, i) => {
-          const angle = Math.atan2(bridge.end.x, bridge.end.z);
-          return (
-            <group key={i} rotation={[0, angle, 0]}>
-              {[3.0, 3.65, 4.3, 4.95, 5.6, 6.25].flatMap((distance, j) => {
-                // The north promenade forks around the clocktower.
-                const fork =
-                  bridge.end.x === 0 &&
-                  bridge.end.z < 0 &&
-                  distance >= 3.65 &&
-                  distance <= 5.6;
-                if (i === 0 && distance >= 4.6) return [];
-                return (fork ? [-1.35, 1.35] : [0]).map((x) => (
-                  <HarborBlock
-                    key={`${j}-${x}`}
-                    at={[x, 0.018, distance]}
-                    size={[fork ? 0.65 : 1.35, 0.025, 0.5]}
-                    color={j % 2 ? '#e9d8b7' : '#e3ccaa'}
-                  />
-                ));
-              })}
-              {i === 0 &&
-                HARBOR_STEPS.map((step, index) => (
-                  <group key={index}>
-                    <HarborBlock
-                      at={[0, step.height / 2, (step.from + step.to) / 2]}
-                      size={[
-                        HARBOR_STEP_WIDTH,
-                        step.height,
-                        step.to - step.from,
-                      ]}
-                      color={index % 2 ? '#d9c39c' : '#e6d1ad'}
-                    />
-                    <HarborBlock
-                      at={[0, step.height - 0.035, step.from + 0.025]}
-                      size={[HARBOR_STEP_WIDTH + 0.04, 0.07, 0.07]}
-                      color="#b5986f"
-                    />
-                  </group>
-                ))}
-              <HarborBlock
-                at={[0, bridge.startHeight + 0.028, HARBOR_RADIUS - 0.2]}
-                size={[1.65, 0.035, 0.16]}
-                color="#b99b70"
-              />
-            </group>
-          );
-        })}
       {HARBOR_PLANTERS.map((p, i) => (
         <group key={i} position={[p.x, 0, p.z]}>
           <mesh position={[0, 0.17, 0]} castShadow receiveShadow>
@@ -731,112 +447,21 @@ export function Harbor({
           event.stopPropagation();
         }}
       >
-        {harborIslands.map((island, i) => (
-          <group key={i} position={[island.x, island.y, island.z]}>
-            <IslandRock radius={island.radius} seed={i} />
-            {(i === 3 || i === 5) && (
-              <Waterfall
-                radius={island.radius}
-                drop={island.y + 5}
-                paused={paused}
-                reduced={reduced}
-              />
-            )}
-            {i > 0 && (
-              <>
-                <group position={[0, 0, -2 * SCENERY_SPREAD]}>
-                  <CanalHouse color={colors[i - 1]} night={night} />
-                </group>
-                <HarborTree
-                  at={[2.05 * SCENERY_SPREAD, 0, -1.15 * SCENERY_SPREAD]}
-                  palm={i === 6 || i === 2}
-                />
-                <HarborTree
-                  at={[-1.9 * SCENERY_SPREAD, 0, -1.35 * SCENERY_SPREAD]}
-                  palm={i === 6 || i === 4}
-                />
-                {[-1, 1].map((side) => (
-                  <group key={side}>
-                    <HarborBlock
-                      at={[
-                        side * 2.35 * SCENERY_SPREAD,
-                        0.22,
-                        0.5 * SCENERY_SPREAD,
-                      ]}
-                      size={[0.28, 0.44, 1.1]}
-                      color="#e7c891"
-                    />
-                    <HarborBlock
-                      at={[
-                        side * 2.35 * SCENERY_SPREAD,
-                        0.5,
-                        0.5 * SCENERY_SPREAD,
-                      ]}
-                      size={[0.4, 0.13, 1.25]}
-                      color="#9b7a58"
-                    />
-                    <HarborBlock
-                      at={[
-                        side * 1.8 * SCENERY_SPREAD,
-                        0.4,
-                        1.6 * SCENERY_SPREAD,
-                      ]}
-                      size={[0.12, 0.8, 0.12]}
-                      color="#897957"
-                    />
-                    <mesh
-                      position={[
-                        side * 1.8 * SCENERY_SPREAD,
-                        0.87,
-                        1.6 * SCENERY_SPREAD,
-                      ]}
-                    >
-                      <boxGeometry args={[0.24, 0.24, 0.24]} />
-                      <meshStandardMaterial
-                        color="#fff0b8"
-                        emissive="#f6cd7d"
-                        emissiveIntensity={night ? 1.5 : 0.15}
-                      />
-                    </mesh>
-                  </group>
-                ))}
-              </>
-            )}
-          </group>
-        ))}
-        {harborBridges.map((b, i) => (
-          <Bridge key={i} bridge={b} />
-        ))}
+        <CanalCity night={night} paused={paused} reduced={reduced} />
+        {CITY_TREES.map((tree, i) => <HarborTree key={i} at={[tree.x, tree.y, tree.z]} palm={i < 2} />)}
       </group>
       <HarborCourtyard night={night} />
-      <group position={[0, 0, CLOCK_Z]}>
+      <group position={[0, harborHeight({ x: 0, z: CLOCK_Z }), CLOCK_Z]}>
         <CanalHouse color="#e0b785" night={night} paused={paused} tower />
       </group>
       <GroundLabel
-        title="SAM / CURIOSITY HARBOR"
+        title="SAM / THE CANAL CITY"
         position={[0, 0.035, 5.75]}
         width={3.3}
         dark={night}
       />
       <Boat paused={paused} reduced={reduced} />
-      {[
-        [-17.5, -12.5],
-        [17.5, 12.5],
-        [-4, -21],
-      ].map(([x, z], i) => (
-        <mesh
-          key={i}
-          position={[x, -0.65, z]}
-          scale={[1.1, 0.8, 1.3]}
-          castShadow
-        >
-          <icosahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial
-            color={i % 2 ? '#b0b6bd' : '#adbba9'}
-            flatShading
-          />
-        </mesh>
-      ))}
+
     </group>
   );
 }

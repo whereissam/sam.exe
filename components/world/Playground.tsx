@@ -7,9 +7,9 @@ import { GroundLabel } from './GroundLabel';
 import type { Mesh, MeshBasicMaterial } from 'three';
 import type { Point } from './movement';
 export const sparks = [
-  { id: 'curiosity', name: 'Curiosity', x: -12, z: -5.3 },
-  { id: 'craft', name: 'Craft', x: 12, z: 10.3 },
-  { id: 'wander', name: 'Wander', x: 0, z: 16.8 },
+  { id: 'curiosity', name: 'Curiosity', x: -6, z: -7 },
+  { id: 'craft', name: 'Craft', x: 19, z: -1 },
+  { id: 'wander', name: 'Wander', x: 3, z: -16 },
 ];
 export function CollectibleSparks({
   player,

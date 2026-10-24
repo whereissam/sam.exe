@@ -251,7 +251,8 @@ export default function Home() {
   }, [selected]);
   useEffect(() => {
     function down(e: KeyboardEvent) {
-      if (e.defaultPrevented || (e.target as HTMLElement).closest('dialog'))
+      const target = e.target instanceof Element ? e.target : null;
+      if (e.defaultPrevented || target?.closest('dialog'))
         return;
       if (e.key === 'Escape') {
         setSelected(null);
@@ -262,12 +263,12 @@ export default function Home() {
         selected ||
         passportOpen ||
         !ready ||
-        (e.target as HTMLElement).closest('dialog')
+        target?.closest('dialog')
       )
         return;
       if (
         ['INPUT', 'TEXTAREA', 'BUTTON'].includes(
-          (e.target as HTMLElement).tagName,
+          target?.tagName ?? '',
         )
       )
         return;

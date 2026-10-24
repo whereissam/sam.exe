@@ -3833,12 +3833,23 @@ button {
   border-radius: 8px;
   font-size: 12px;
 }
-/* Canal archipelago: gold buildings against a cool, open waterfront. */
+/* Pale limestone and terracotta above the blue canal city. */
 .has-world.world-page {
-  background: radial-gradient(ellipse at 50% 35%, #fff3cd, #c4e4df 80%);
+  --foreground: #203f50;
+  --muted: #486977;
+  --accent-ink: #a64e32;
+  --surface: #f4eddb;
+  --surface-hover: #e4e8dd;
+  --border: #39687840;
+  background: #bee4ed;
 }
 .has-world.world-page.night {
-  background: radial-gradient(ellipse at 50% 35%, #4b565d, #1d3442 80%);
+  --foreground: #f0e6cd;
+  --muted: #b0cbd2;
+  --accent-ink: #edbc7e;
+  --surface: #203d50;
+  --surface-hover: #2b5063;
+  background: #152e4a;
 }
 .in-country .atlas-heading h2 {
   font-size: clamp(22px, 2.5vw, 32px);
@@ -4234,3 +4245,40 @@ button {
   letter-spacing: 1.2px;
 }
 .conversation-bubble p { margin: 0; font-size: 13px; line-height: 1.6; }
+
+/* Small world-scaled waypoint medallions; the full destination stays accessible. */
+.district-marker-anchor { pointer-events: none; }
+.district-marker {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.district-marker-index {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #a18c60;
+  border-radius: 50%;
+  background: #f6eedb;
+  color: #795b34;
+  font: 500 10px Georgia, serif;
+  transition: color 160ms ease, background 160ms ease;
+}
+.district-marker:is(.is-active, :hover, :focus-visible) .district-marker-index {
+  color: #fff4dc;
+  background: #34575b;
+  border-color: #34575b;
+}
+.district-marker:focus-visible { outline: none; }
+.district-marker:focus-visible .district-marker-index { outline: 2px solid #ad7e3d; outline-offset: 3px; }
+.night .district-marker-index { background: #263f46; color: #f3e6c9; }
+.night .district-marker:is(.is-active, :hover, :focus-visible) .district-marker-index { background: #e4d6b4; color: #294b51; }
+.is-inspecting .district-marker-anchor { visibility: hidden; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .district-marker-index { transition: none; } }

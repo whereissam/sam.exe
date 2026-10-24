@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { harborIslands } from './island-layout';
 
-export const oceanHorizon = { day: '#d3dfd2', night: '#283e48' };
+export const oceanHorizon = { day: '#bee4ed', night: '#152e4a' };
 
 const vertexShader = `
   varying vec2 waterPosition;
@@ -41,6 +41,10 @@ const fragmentShader = `
       shadow = max(shadow, 1.0 - smoothstep(1.0, 7.5, d));
     }
     color *= 1.0 - shadow * 0.12;
+    float ripple = sin(p.x * 2.2 + p.y * 0.7 + time * 0.6)
+                 + sin(p.y * 3.8 - p.x * 0.4 - time * 0.45);
+    float glint = smoothstep(1.86, 1.99, ripple);
+    color = mix(color, shallowColor * 1.2, glint * 0.28);
 
     // The sea dissolves into the same haze as the sky before its mesh ends.
     // World-space distance keeps the composition stable as the visitor orbits.
@@ -65,8 +69,8 @@ export function OceanBackdrop({
   const uniforms = useMemo(
     () => ({
       time: { value: 0 },
-      deepColor: { value: new THREE.Color(night ? '#284b55' : '#78aaa7') },
-      shallowColor: { value: new THREE.Color(night ? '#385b61' : '#cbd5b9') },
+      deepColor: { value: new THREE.Color(night ? '#163d59' : '#197da9') },
+      shallowColor: { value: new THREE.Color(night ? '#235d74' : '#61c6d3') },
       horizonColor: {
         value: new THREE.Color(night ? oceanHorizon.night : oceanHorizon.day),
       },

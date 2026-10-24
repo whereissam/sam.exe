@@ -257,6 +257,10 @@ export function IslandGarden(props: Props) {
       <Windmill {...props} />
       <Pond {...props} />
       <Campfire {...props} />
+      <mesh position={[GARDEN_SPOTS.flowers.x, harborHeight(GARDEN_SPOTS.flowers) + .08, GARDEN_SPOTS.flowers.z]} receiveShadow>
+        <cylinderGeometry args={[.8, .8, .16, 32]} />
+        <meshStandardMaterial color="#b8ba9b" />
+      </mesh>
       {Array.from({ length: 20 }, (_, i) => {
         const a = i * 2.399,
           r = 0.4 + (i % 5) * 0.23;
@@ -264,9 +268,9 @@ export function IslandGarden(props: Props) {
           <group
             key={i}
             position={[
-              12.8 + Math.cos(a) * r * 0.5,
-              harborHeight({ x: 12.8, z: -10.8 }),
-              -10.8 + Math.sin(a) * r * 0.5,
+              GARDEN_SPOTS.flowers.x + Math.cos(a) * r * 0.5,
+              harborHeight(GARDEN_SPOTS.flowers) + .16,
+              GARDEN_SPOTS.flowers.z + Math.sin(a) * r * 0.5,
             ]}
           >
             <mesh position={[0, 0.18, 0]}>
