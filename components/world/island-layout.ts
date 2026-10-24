@@ -19,7 +19,7 @@ export const harborBridges = CITY_STAIRS.map(s => ({
   startHeight: s.yStart, width: s.width,
 }));
 export const GARDEN_SPOTS = {
-  pond: { x: -24, z: -14, radius: 0.6 },
+  pond: { x: -24.75, z: -12, radius: 0.6 },
   windmill: { x: 23, z: -8, radius: 0.55 },
   flowers: { x: 19.5, z: -7, radius: .8 },
   campfire: { x: -4.5, z: 0.5, radius: 0.55 },

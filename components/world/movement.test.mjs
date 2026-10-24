@@ -84,11 +84,12 @@ test('island heights and every bridge ramp join continuously', () => {
 });
 
 test('former decorative house sites are open for walking', () => {
+  // Some old sites now fall in a canal, so check for colliders rather than land.
   for (const district of districts) {
-    assert.ok(walkable({
-      x: district.position[0],
-      z: district.position[2] - 2 * SCENERY_SPREAD,
-    }), `${district.id} still has an invisible house obstacle`);
+    const site = { x: district.position[0], z: district.position[2] - 2 * SCENERY_SPREAD };
+    assert.ok(!islandObstacles.some(
+      (o) => Math.hypot(site.x - o.x, site.z - o.z) < o.radius,
+    ), `${district.id} still has an invisible house obstacle`);
   }
 });
 
